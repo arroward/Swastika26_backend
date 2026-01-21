@@ -29,10 +29,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<
     "registrations" | "admins" | "events"
   >("registrations");
-  const [selectedCoordinatorEvent, setSelectedCoordinatorEvent] = useState<
-    string | null
-  >(null);
-  const [coordinatorRegistrations, setCoordinatorRegistrations] = useState([]);
 
   // Load admin info from localStorage
   useEffect(() => {
@@ -143,33 +139,6 @@ export default function AdminDashboard() {
     fetchRegistrations(eventId);
   };
 
-  const fetchCoordinatorRegistrations = async (eventId: string) => {
-    setIsLoadingData(true);
-    try {
-      const response = await fetch(
-        `/api/admin/registrations?role=event_coordinator&eventId=${eventId}`,
-      );
-      const data = await response.json();
-
-      if (data.success) {
-        setCoordinatorRegistrations(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching coordinator registrations:", error);
-    } finally {
-      setIsLoadingData(false);
-    }
-  };
-
-  const handleCoordinatorEventSelect = (eventId: string) => {
-    setSelectedCoordinatorEvent(eventId);
-    if (eventId) {
-      fetchCoordinatorRegistrations(eventId);
-    } else {
-      setCoordinatorRegistrations([]);
-    }
-  };
-
   const handleDownload = async (format: "csv" | "pdf") => {
     if (!admin) return;
 
@@ -177,10 +146,6 @@ export default function AdminDashboard() {
       const url = new URL("/api/admin/download", window.location.origin);
       url.searchParams.set("role", admin.role);
       url.searchParams.set("format", format);
-
-      if (admin.role === "event_coordinator" && selectedCoordinatorEvent) {
-        url.searchParams.set("eventId", selectedCoordinatorEvent);
-      }
 
       const response = await fetch(url.toString());
 
@@ -196,9 +161,7 @@ export default function AdminDashboard() {
       const filename =
         admin.role === "superadmin"
           ? `all_registrations_${new Date().toISOString().split("T")[0]}`
-          : selectedCoordinatorEvent
-            ? `registrations_${selectedCoordinatorEvent}_${new Date().toISOString().split("T")[0]}`
-            : "registrations";
+          : `registrations_${new Date().toISOString().split("T")[0]}`;
 
       link.setAttribute("download", `${filename}.${format}`);
       document.body.appendChild(link);
@@ -246,7 +209,17 @@ export default function AdminDashboard() {
                 Super Admin Access
               </h2>
               <p className="text-blue-200">
-                You have access to all participant data and admin management.
+                Total Students Registered:{" "}
+                <span className="font-bold text-blue-100">
+                  {events.reduce(
+                    (sum, event) => sum + event.registeredCount,
+                    0,
+                  )}
+                </span>{" "}
+                | Events:{" "}
+                <span className="font-bold text-blue-100">{events.length}</span>{" "}
+                | Admins:{" "}
+                <span className="font-bold text-blue-100">{admins.length}</span>
               </p>
             </div>
 
@@ -260,7 +233,8 @@ export default function AdminDashboard() {
                     : "text-gray-400 hover:text-gray-300"
                 }`}
               >
-                Registrations
+                Registrations{" "}
+                {registrations.length > 0 && `(${registrations.length})`}
               </button>
               <button
                 onClick={() => setActiveTab("events")}
@@ -460,75 +434,12 @@ export default function AdminDashboard() {
               </h2>
               <p className="text-green-200">
                 You manage {events.length} event{events.length !== 1 ? "s" : ""}
-                . Select an event to view registered students.
+                . View registered students below.
               </p>
             </div>
 
-            {/* Event Selection Dropdown */}
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-              <label className="block text-sm font-semibold text-gray-300 mb-2">
-                Select Event to View Students
-              </label>
-              <select
-                value={selectedCoordinatorEvent || ""}
-                onChange={(e) => handleCoordinatorEventSelect(e.target.value)}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:border-blue-500"
-              >
-                <option value="">-- Select an event --</option>
-                {events.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {event.title} ({event.registeredCount}/{event.capacity}{" "}
-                    registered)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Display Registrations for Selected Event */}
-            {selectedCoordinatorEvent && (
-              <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold text-white">
-                      {
-                        events.find((e) => e.id === selectedCoordinatorEvent)
-                          ?.title
-                      }
-                    </h3>
-                    <p className="text-gray-400 text-sm mt-1">
-                      Showing all registered students for this event
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleDownload("csv")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition duration-200"
-                  >
-                    Download CSV
-                  </button>
-                </div>
-
-                {isLoadingData ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-400">Loading registrations...</p>
-                  </div>
-                ) : coordinatorRegistrations.length === 0 ? (
-                  <div className="text-center py-6 bg-gray-900 rounded">
-                    <p className="text-gray-400">
-                      No registrations yet for this event.
-                    </p>
-                  </div>
-                ) : (
-                  <RegistrationsTable
-                    registrations={coordinatorRegistrations}
-                    isLoading={isLoadingData}
-                    onDownload={handleDownload}
-                  />
-                )}
-              </div>
-            )}
-
-            {/* Show all events in cards if no event is selected */}
-            {!selectedCoordinatorEvent && events.length > 0 && (
+            {/* Show all events in cards */}
+            {events.length > 0 && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-300">
                   Your Assigned Events
@@ -538,25 +449,17 @@ export default function AdminDashboard() {
                     key={event.id}
                     className="bg-gray-800 border border-gray-700 rounded-lg p-6"
                   >
-                    <div className="flex justify-between items-center mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-white">
-                          {event.title}
-                        </h3>
-                        <p className="text-gray-400 text-sm mt-1">
-                          {event.description}
-                        </p>
-                        <p className="text-gray-500 text-sm mt-1">
-                          Date: {new Date(event.date).toLocaleDateString()} |
-                          Location: {event.location}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleCoordinatorEventSelect(event.id)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition duration-200"
-                      >
-                        View Students
-                      </button>
+                    <div className="mb-4">
+                      <h3 className="text-xl font-bold text-white">
+                        {event.title}
+                      </h3>
+                      <p className="text-gray-400 text-sm mt-1">
+                        {event.description}
+                      </p>
+                      <p className="text-gray-500 text-sm mt-1">
+                        Date: {new Date(event.date).toLocaleDateString()} |
+                        Location: {event.location}
+                      </p>
                     </div>
 
                     <EventRegistrationsList eventId={event.id} />
