@@ -21,24 +21,50 @@ export default function EventRegistrationForm({
     fullName: "",
     email: "",
     phone: "",
-    organization: "",
+    collegeName: "",
+    universityName: "",
+    teamSize: 0,
+    teamMembers: [],
   });
 
   const [errors, setErrors] = useState({
     fullName: "",
     email: "",
     phone: "",
+    collegeName: "",
+    universityName: "",
   });
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "teamSize") {
+      const size = Math.max(parseInt(value) || 1, 1);
+      // For team size n, we need n-1 additional member fields (excluding the main registrant)
+      const newTeamMembers = Array(Math.max(size - 1, 0))
+        .fill("")
+        .map((_, i) => formData.teamMembers[i] || "");
+      setFormData((prev) => ({
+        ...prev,
+        teamSize: size,
+        teamMembers: newTeamMembers,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
     // Clear error when user starts typing
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
+  };
+
+  const handleTeamMemberChange = (index: number, value: string) => {
+    const newTeamMembers = [...formData.teamMembers];
+    newTeamMembers[index] = value;
+    setFormData((prev) => ({ ...prev, teamMembers: newTeamMembers }));
   };
 
   const validateForm = () => {
@@ -46,6 +72,8 @@ export default function EventRegistrationForm({
       fullName: "",
       email: "",
       phone: "",
+      collegeName: "",
+      universityName: "",
     };
 
     if (!formData.fullName.trim()) {
@@ -62,6 +90,14 @@ export default function EventRegistrationForm({
       newErrors.phone = "Phone number is required";
     } else if (!/^\+?[\d\s-()]+$/.test(formData.phone)) {
       newErrors.phone = "Please enter a valid phone number";
+    }
+
+    if (!formData.collegeName.trim()) {
+      newErrors.collegeName = "College name is required";
+    }
+
+    if (!formData.universityName.trim()) {
+      newErrors.universityName = "University name is required";
     }
 
     setErrors(newErrors);
@@ -198,12 +234,70 @@ export default function EventRegistrationForm({
         />
 
         <FormInput
-          label="Organization (Optional)"
-          name="organization"
-          value={formData.organization}
+          label="College Name"
+          name="collegeName"
+          value={formData.collegeName}
           onChange={handleChange}
-          placeholder="Your company or organization"
+          required
+          placeholder="Your college name"
+          error={errors.collegeName}
         />
+
+        <FormInput
+          label="University Name"
+          name="universityName"
+          value={formData.universityName}
+          onChange={handleChange}
+          required
+          placeholder="Your university name"
+          error={errors.universityName}
+        />
+
+        <div className="mb-6">
+          <label
+            htmlFor="teamSize"
+            className="block text-gray-700 font-semibold mb-2"
+          >
+            Number of Team Members
+            <span className="text-red-500 ml-1">*</span>
+          </label>
+          <input
+            type="number"
+            id="teamSize"
+            name="teamSize"
+            min="0"
+            max="30"
+            value={formData.teamSize}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 bg-white"
+          />
+          <p className="mt-1 text-sm text-gray-500">Including yourself</p>
+        </div>
+
+        {formData.teamSize > 1 && (
+          <div className="mb-6">
+            <label className="block text-gray-700 font-semibold mb-2">
+              Team Member Names (excluding yourself)
+              <span className="text-red-500 ml-1">*</span>
+            </label>
+            <div className="space-y-3">
+              {formData.teamMembers.map((member, index) => (
+                <input
+                  key={index}
+                  type="text"
+                  value={member}
+                  onChange={(e) =>
+                    handleTeamMemberChange(index, e.target.value)
+                  }
+                  placeholder={`Team Member ${index + 1} Name`}
+                  required
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 bg-white"
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <h3 className="font-semibold text-gray-800 mb-2">Event Details</h3>

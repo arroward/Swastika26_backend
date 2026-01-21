@@ -5,12 +5,36 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { eventId, fullName, email, phone, organization } = body;
+    const {
+      eventId,
+      fullName,
+      email,
+      phone,
+      collegeName,
+      universityName,
+      teamSize,
+      teamMembers,
+    } = body;
 
     // Validate required fields
-    if (!eventId || !fullName || !email || !phone) {
+    if (
+      !eventId ||
+      !fullName ||
+      !email ||
+      !phone ||
+      !collegeName ||
+      !universityName
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 },
+      );
+    }
+
+    // Validate team size
+    if (teamSize && (teamSize < 1 || teamSize > 10)) {
+      return NextResponse.json(
+        { error: "Team size must be between 1 and 10" },
         { status: 400 },
       );
     }
@@ -30,7 +54,10 @@ export async function POST(request: NextRequest) {
       fullName,
       email,
       phone,
-      organization,
+      collegeName,
+      universityName,
+      teamSize: teamSize || 1,
+      teamMembers: teamMembers || [],
     });
 
     return NextResponse.json(

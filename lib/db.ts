@@ -34,6 +34,10 @@ export async function initDatabase() {
         full_name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
         phone VARCHAR(20),
+        college_name VARCHAR(255),
+        university_name VARCHAR(255),
+        team_size INTEGER DEFAULT 1,
+        team_members JSONB,
         organization VARCHAR(255),
         registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(event_id, email)
@@ -120,12 +124,24 @@ export async function registerForEvent(registration: {
   fullName: string;
   email: string;
   phone: string;
-  organization?: string;
+  collegeName: string;
+  universityName: string;
+  teamSize: number;
+  teamMembers?: string[];
 }) {
   try {
     const result = await sql`
-      INSERT INTO event_registrations (event_id, full_name, email, phone, organization)
-      VALUES (${registration.eventId}, ${registration.fullName}, ${registration.email}, ${registration.phone}, ${registration.organization || null})
+      INSERT INTO event_registrations (event_id, full_name, email, phone, college_name, university_name, team_size, team_members)
+      VALUES (
+        ${registration.eventId}, 
+        ${registration.fullName}, 
+        ${registration.email}, 
+        ${registration.phone}, 
+        ${registration.collegeName}, 
+        ${registration.universityName}, 
+        ${registration.teamSize}, 
+        ${JSON.stringify(registration.teamMembers || [])}
+      )
       RETURNING id
     `;
 
