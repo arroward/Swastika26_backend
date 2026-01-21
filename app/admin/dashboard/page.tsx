@@ -6,6 +6,7 @@ import AdminHeader from "@/components/AdminHeader";
 import EventSelect from "@/components/EventSelect";
 import RegistrationsTable from "@/components/RegistrationsTable";
 import AdminManagement from "@/components/AdminManagement";
+import EventManagement from "@/components/EventManagement";
 import EventRegistrationsList from "@/components/EventRegistrationsList";
 import { Event } from "@/types/event";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -286,132 +287,13 @@ export default function AdminDashboard() {
 
             {/* Events Tab */}
             {activeTab === "events" && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-bold text-white">
-                    All Events ({events.length})
-                  </h3>
-                </div>
-
-                {events.length === 0 ? (
-                  <div className="bg-gray-800 rounded-lg p-8 text-center">
-                    <p className="text-gray-400">
-                      No events found in the database.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-6">
-                    {events.map((event) => (
-                      <div
-                        key={event.id}
-                        className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition"
-                      >
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="flex-1">
-                            <h4 className="text-xl font-bold text-white mb-2">
-                              {event.title}
-                            </h4>
-                            <p className="text-gray-400 text-sm mb-3">
-                              {event.description}
-                            </p>
-                            <div className="flex flex-wrap gap-4 text-sm">
-                              <div className="flex items-center text-gray-300">
-                                <svg
-                                  className="w-4 h-4 mr-2"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                  />
-                                </svg>
-                                {new Date(event.date).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    weekday: "long",
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  },
-                                )}
-                              </div>
-                              <div className="flex items-center text-gray-300">
-                                <svg
-                                  className="w-4 h-4 mr-2"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                </svg>
-                                {event.location}
-                              </div>
-                              <div className="flex items-center text-gray-300">
-                                <svg
-                                  className="w-4 h-4 mr-2"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                                  />
-                                </svg>
-                                {event.category}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                event.registeredCount >= event.capacity
-                                  ? "bg-red-900 text-red-200"
-                                  : event.registeredCount >=
-                                      event.capacity * 0.8
-                                    ? "bg-yellow-900 text-yellow-200"
-                                    : "bg-green-900 text-green-200"
-                              }`}
-                            >
-                              {event.registeredCount}/{event.capacity}{" "}
-                              registered
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              setActiveTab("registrations");
-                              setSelectedEventId(event.id);
-                              fetchRegistrations(event.id);
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded transition"
-                          >
-                            View Registrations
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <EventManagement
+                onUpdate={() => {
+                  if (admin) {
+                    fetchEvents(admin);
+                  }
+                }}
+              />
             )}
 
             {/* Admins Tab */}

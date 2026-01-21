@@ -482,3 +482,70 @@ export async function deleteAdmin(adminId: string) {
     throw error;
   }
 }
+
+// Event management functions (for superadmin)
+export async function createEvent(event: {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  imageUrl: string;
+  category: string;
+  capacity: number;
+}) {
+  try {
+    await sql`
+      INSERT INTO events (id, title, description, date, location, image_url, category, capacity, registered_count)
+      VALUES (${event.id}, ${event.title}, ${event.description}, ${event.date}, ${event.location}, ${event.imageUrl}, ${event.category}, ${event.capacity}, 0)
+    `;
+    return true;
+  } catch (error) {
+    console.error("Error creating event:", error);
+    throw error;
+  }
+}
+
+export async function updateEvent(
+  eventId: string,
+  updates: {
+    title?: string;
+    description?: string;
+    date?: string;
+    location?: string;
+    imageUrl?: string;
+    category?: string;
+    capacity?: number;
+  },
+) {
+  try {
+    await sql`
+      UPDATE events
+      SET title = ${updates.title || sql`title`},
+          description = ${updates.description || sql`description`},
+          date = ${updates.date || sql`date`},
+          location = ${updates.location || sql`location`},
+          image_url = ${updates.imageUrl || sql`image_url`},
+          category = ${updates.category || sql`category`},
+          capacity = ${updates.capacity !== undefined ? updates.capacity : sql`capacity`}
+      WHERE id = ${eventId}
+    `;
+    return true;
+  } catch (error) {
+    console.error("Error updating event:", error);
+    throw error;
+  }
+}
+
+export async function deleteEvent(eventId: string) {
+  try {
+    await sql`
+      DELETE FROM events
+      WHERE id = ${eventId}
+    `;
+    return true;
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    throw error;
+  }
+}
