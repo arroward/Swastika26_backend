@@ -20,6 +20,7 @@ export default function EventRegistrationsList({
 }: EventRegistrationsListProps) {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRegistrations();
@@ -27,17 +28,23 @@ export default function EventRegistrationsList({
 
   const fetchRegistrations = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const response = await fetch(
-        `/api/admin/registrations?eventId=${eventId}`,
-      );
+      console.log("Fetching registrations for event:", eventId);
+      const response = await fetch(`/api/events/${eventId}/registrations`);
       const data = await response.json();
+
+      console.log("API response:", data);
 
       if (data.success) {
         setRegistrations(data.data);
+      } else {
+        console.error("Failed to fetch registrations:", data.error);
+        setError(data.error || "Failed to load registrations");
       }
     } catch (error) {
       console.error("Error fetching registrations:", error);
+      setError("Error loading registrations");
     } finally {
       setIsLoading(false);
     }
@@ -47,6 +54,14 @@ export default function EventRegistrationsList({
     return (
       <div className="text-center py-4">
         <p className="text-gray-400">Loading registrations...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-6 bg-red-900/20 border border-red-700 rounded">
+        <p className="text-red-400">{error}</p>
       </div>
     );
   }

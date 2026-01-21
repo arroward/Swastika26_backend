@@ -24,13 +24,18 @@ export async function GET(request: NextRequest) {
   try {
     const adminId = await getAdminFromSession(request);
 
+    console.log("Admin session:", adminId);
+
     if (!adminId) {
+      console.log("No admin session found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
     const role = searchParams.get("role");
+
+    console.log("Request params:", { eventId, role });
 
     // Superadmin gets all registrations
     if (role === "superadmin") {
@@ -43,13 +48,16 @@ export async function GET(request: NextRequest) {
 
     // Event coordinator gets registrations for their events
     if (role === "event_coordinator" && eventId) {
+      console.log("Fetching registrations for event:", eventId);
       const registrations = await getRegistrationsByEvent(eventId);
+      console.log("Found registrations:", registrations.length);
       return NextResponse.json({
         success: true,
         data: registrations,
       });
     }
 
+    console.log("Invalid request - missing role or eventId");
     return NextResponse.json(
       { error: "Invalid request parameters" },
       { status: 400 },
