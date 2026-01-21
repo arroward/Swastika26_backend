@@ -344,7 +344,10 @@ export default function AdminDashboard() {
                       </p>
                     </div>
 
-                    <EventRegistrationsList eventId={event.id} />
+                    <EventRegistrationsList
+                      eventId={event.id}
+                      eventTitle={event.title}
+                    />
                   </div>
                 ))}
               </div>

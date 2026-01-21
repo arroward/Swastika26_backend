@@ -16,14 +16,17 @@ interface Registration {
 
 interface EventRegistrationsListProps {
   eventId: string;
+  eventTitle?: string;
 }
 
 export default function EventRegistrationsList({
   eventId,
+  eventTitle,
 }: EventRegistrationsListProps) {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     fetchRegistrations();
@@ -53,6 +56,39 @@ export default function EventRegistrationsList({
     }
   };
 
+  const handleDownload = async (format: "csv" | "pdf") => {
+    setIsDownloading(true);
+    try {
+      const url = new URL("/api/admin/download", window.location.origin);
+      url.searchParams.set("eventId", eventId);
+      url.searchParams.set("role", "event_coordinator");
+      url.searchParams.set("format", format);
+
+      const response = await fetch(url.toString());
+
+      if (!response.ok) {
+        throw new Error("Download failed");
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+
+      const filename = `${eventTitle || eventId}_registrations_${new Date().toISOString().split("T")[0]}`;
+      link.setAttribute("download", `${filename}.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Error downloading:", error);
+      alert("Failed to download registrations");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-4">
@@ -79,8 +115,52 @@ export default function EventRegistrationsList({
 
   return (
     <div className="overflow-x-auto">
-      <div className="mb-2 text-sm text-gray-400">
-        Total Registrations: {registrations.length}
+      <div className="mb-4 flex justify-between items-center">
+        <div className="text-sm text-gray-400">
+          Total Registrations: {registrations.length}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleDownload("csv")}
+            disabled={isDownloading}
+            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition duration-200 flex items-center gap-2 text-sm"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            {isDownloading ? "Downloading..." : "CSV"}
+          </button>
+          <button
+            onClick={() => handleDownload("pdf")}
+            disabled={isDownloading}
+            className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition duration-200 flex items-center gap-2 text-sm"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+              />
+            </svg>
+            {isDownloading ? "Downloading..." : "PDF"}
+          </button>
+        </div>
       </div>
       <table className="w-full text-left">
         <thead>
