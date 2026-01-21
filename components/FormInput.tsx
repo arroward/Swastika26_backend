@@ -25,7 +25,7 @@ export default function FormInput({
 }: FormInputProps) {
   const inputClasses = `w-full px-4 py-3 rounded-lg border ${
     error ? "border-red-500" : "border-gray-300"
-  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`;
+  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 bg-white`;
 
   return (
     <div className="mb-6">

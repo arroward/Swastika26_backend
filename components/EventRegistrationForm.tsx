@@ -79,7 +79,7 @@ export default function EventRegistrationForm({
     setError("");
 
     try {
-      const response = await fetch("/api/events/register", {
+      const response = await fetch("/api/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,9 +136,7 @@ export default function EventRegistrationForm({
           You have successfully registered for{" "}
           <span className="font-semibold">{event.title}</span>
         </p>
-        <p className="text-sm text-gray-500">
-          Redirecting you back to home...
-        </p>
+        <p className="text-sm text-gray-500">Redirecting you back to home...</p>
       </div>
     );
   }

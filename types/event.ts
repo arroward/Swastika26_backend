@@ -19,3 +19,15 @@ export interface EventRegistration {
   organization?: string;
   registrationDate?: string;
 }
+
+export type AdminRole = "superadmin" | "event_coordinator";
+
+export interface Admin {
+  id: string;
+  email: string;
+  password: string;
+  role: AdminRole;
+  name: string;
+  eventIds?: string[]; // For event coordinators, which events they manage
+  createdAt: string;
+}

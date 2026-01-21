@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { Event } from "@/types/event";
+import { Event, Admin, AdminRole } from "@/types/event";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is not set");
@@ -37,6 +37,27 @@ export async function initDatabase() {
         organization VARCHAR(255),
         registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(event_id, email)
+      )
+    `;
+
+    // Create admins table
+    await sql`
+      CREATE TABLE IF NOT EXISTS admins (
+        id VARCHAR(255) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL CHECK (role IN ('superadmin', 'event_coordinator')),
+        name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    // Create admin_events junction table for event coordinators
+    await sql`
+      CREATE TABLE IF NOT EXISTS admin_events (
+        admin_id VARCHAR(255) REFERENCES admins(id) ON DELETE CASCADE,
+        event_id VARCHAR(255) REFERENCES events(id) ON DELETE CASCADE,
+        PRIMARY KEY (admin_id, event_id)
       )
     `;
 
@@ -118,6 +139,215 @@ export async function registerForEvent(registration: {
     return result[0];
   } catch (error) {
     console.error("Error registering for event:", error);
+    throw error;
+  }
+}
+
+// Admin authentication
+export async function getAdminByEmail(email: string) {
+  try {
+    const result = await sql`
+      SELECT 
+        id,
+        email,
+        password,
+        role,
+        name
+      FROM admins
+      WHERE email = ${email}
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error("Error fetching admin:", error);
+    return null;
+  }
+}
+
+// Get events for admin (coordinator sees only their events)
+export async function getAdminEvents(adminId: string, role: string) {
+  try {
+    if (role === "superadmin") {
+      return await getEvents();
+    } else {
+      // Event coordinator - get only their events
+      const events = await sql`
+        SELECT 
+          e.id,
+          e.title,
+          e.description,
+          e.date,
+          e.location,
+          e.image_url as "imageUrl",
+          e.category,
+          e.capacity,
+          e.registered_count as "registeredCount"
+        FROM events e
+        INNER JOIN admin_events ae ON e.id = ae.event_id
+        WHERE ae.admin_id = ${adminId}
+        ORDER BY e.date ASC
+      `;
+      return events as Event[];
+    }
+  } catch (error) {
+    console.error("Error fetching admin events:", error);
+    return [];
+  }
+}
+
+// Get registrations for an event
+export async function getEventRegistrations(eventId: string) {
+  try {
+    const registrations = await sql`
+      SELECT 
+        r.id,
+        r.event_id as "eventId",
+        e.title as "eventTitle",
+        r.full_name as "fullName",
+        r.email,
+        r.phone,
+        r.organization,
+        r.registration_date as "registrationDate"
+      FROM event_registrations r
+      INNER JOIN events e ON r.event_id = e.id
+      WHERE r.event_id = ${eventId}
+      ORDER BY r.registration_date DESC
+    `;
+    return registrations;
+  } catch (error) {
+    console.error("Error fetching registrations:", error);
+    return [];
+  }
+}
+
+// Get all registrations (for superadmin)
+export async function getAllRegistrations() {
+  try {
+    const registrations = await sql`
+      SELECT 
+        r.id,
+        r.event_id as "eventId",
+        e.title as "eventTitle",
+        r.full_name as "fullName",
+        r.email,
+        r.phone,
+        r.organization,
+        r.registration_date as "registrationDate"
+      FROM event_registrations r
+      INNER JOIN events e ON r.event_id = e.id
+      ORDER BY r.registration_date DESC
+    `;
+    return registrations;
+  } catch (error) {
+    console.error("Error fetching all registrations:", error);
+    return [];
+  }
+}
+
+// Get registrations for coordinator's events
+export async function getCoordinatorRegistrations(adminId: string) {
+  try {
+    const registrations = await sql`
+      SELECT 
+        r.id,
+        r.event_id as "eventId",
+        e.title as "eventTitle",
+        r.full_name as "fullName",
+        r.email,
+        r.phone,
+        r.organization,
+        r.registration_date as "registrationDate"
+      FROM event_registrations r
+      INNER JOIN events e ON r.event_id = e.id
+      INNER JOIN admin_events ae ON e.id = ae.event_id
+      WHERE ae.admin_id = ${adminId}
+      ORDER BY r.registration_date DESC
+    `;
+    return registrations;
+  } catch (error) {
+    console.error("Error fetching coordinator registrations:", error);
+    return [];
+  }
+}
+
+export async function getRegistrationsByEvent(eventId: string) {
+  try {
+    const registrations = await sql`
+      SELECT 
+        id,
+        event_id as "eventId",
+        full_name as "fullName",
+        email,
+        phone,
+        organization,
+        registration_date as "registrationDate"
+      FROM event_registrations
+      WHERE event_id = ${eventId}
+      ORDER BY registration_date DESC
+    `;
+    return registrations;
+  } catch (error) {
+    console.error("Error fetching registrations:", error);
+    return [];
+  }
+}
+
+export async function getAdminManagedEvents(adminId: string): Promise<Event[]> {
+  try {
+    const events = await sql`
+      SELECT 
+        e.id,
+        e.title,
+        e.description,
+        e.date,
+        e.location,
+        e.image_url as "imageUrl",
+        e.category,
+        e.capacity,
+        e.registered_count as "registeredCount"
+      FROM events e
+      JOIN admin_events ae ON e.id = ae.event_id
+      WHERE ae.admin_id = ${adminId}
+      ORDER BY e.date ASC
+    `;
+    return events as Event[];
+  } catch (error) {
+    console.error("Error fetching admin managed events:", error);
+    return [];
+  }
+}
+
+export async function createAdmin(admin: {
+  id: string;
+  email: string;
+  password: string;
+  role: AdminRole;
+  name: string;
+}) {
+  try {
+    await sql`
+      INSERT INTO admins (id, email, password, role, name)
+      VALUES (${admin.id}, ${admin.email}, ${admin.password}, ${admin.role}, ${admin.name})
+    `;
+    return true;
+  } catch (error) {
+    console.error("Error creating admin:", error);
+    throw error;
+  }
+}
+
+export async function assignEventToCoordinator(
+  adminId: string,
+  eventId: string,
+) {
+  try {
+    await sql`
+      INSERT INTO admin_events (admin_id, event_id)
+      VALUES (${adminId}, ${eventId})
+      ON CONFLICT DO NOTHING
+    `;
+    return true;
+  } catch (error) {
+    console.error("Error assigning event to coordinator:", error);
     throw error;
   }
 }
