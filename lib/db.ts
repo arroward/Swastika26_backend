@@ -221,7 +221,10 @@ export async function getEventRegistrations(eventId: string) {
         r.full_name as "fullName",
         r.email,
         r.phone,
-        r.organization,
+        r.college_name as "collegeName",
+        r.university_name as "universityName",
+        r.team_size as "teamSize",
+        r.team_members as "teamMembers",
         r.registration_date as "registrationDate"
       FROM event_registrations r
       INNER JOIN events e ON r.event_id = e.id
@@ -246,7 +249,10 @@ export async function getAllRegistrations() {
         r.full_name as "fullName",
         r.email,
         r.phone,
-        r.organization,
+        r.college_name as "collegeName",
+        r.university_name as "universityName",
+        r.team_size as "teamSize",
+        r.team_members as "teamMembers",
         r.registration_date as "registrationDate"
       FROM event_registrations r
       INNER JOIN events e ON r.event_id = e.id
@@ -270,7 +276,10 @@ export async function getCoordinatorRegistrations(adminId: string) {
         r.full_name as "fullName",
         r.email,
         r.phone,
-        r.organization,
+        r.college_name as "collegeName",
+        r.university_name as "universityName",
+        r.team_size as "teamSize",
+        r.team_members as "teamMembers",
         r.registration_date as "registrationDate"
       FROM event_registrations r
       INNER JOIN events e ON r.event_id = e.id
@@ -294,7 +303,10 @@ export async function getRegistrationsByEvent(eventId: string) {
         full_name as "fullName",
         email,
         phone,
-        organization,
+        college_name as "collegeName",
+        university_name as "universityName",
+        team_size as "teamSize",
+        team_members as "teamMembers",
         registration_date as "registrationDate"
       FROM event_registrations
       WHERE event_id = ${eventId}

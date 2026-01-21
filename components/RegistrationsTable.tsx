@@ -113,7 +113,13 @@ export default function RegistrationsTable({
                 Phone
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                Organization
+                College
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                University
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                Team Size
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
                 Registration Date
@@ -135,8 +141,12 @@ export default function RegistrationsTable({
                 <td className="px-6 py-4 text-gray-200">{reg.email}</td>
                 <td className="px-6 py-4 text-gray-200">{reg.phone}</td>
                 <td className="px-6 py-4 text-gray-200">
-                  {reg.organization || "-"}
+                  {reg.collegeName || "-"}
                 </td>
+                <td className="px-6 py-4 text-gray-200">
+                  {reg.universityName || "-"}
+                </td>
+                <td className="px-6 py-4 text-gray-200">{reg.teamSize || 1}</td>
                 <td className="px-6 py-4 text-gray-400 text-sm">
                   {new Date(reg.registrationDate).toLocaleDateString()}
                 </td>

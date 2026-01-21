@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate team size
-    if (teamSize && (teamSize < 1 || teamSize > 10)) {
+    const validTeamSize = teamSize || 1;
+    if (validTeamSize < 1 || validTeamSize > 10) {
       return NextResponse.json(
         { error: "Team size must be between 1 and 10" },
         { status: 400 },

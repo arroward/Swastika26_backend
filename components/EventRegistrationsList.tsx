@@ -7,7 +7,10 @@ interface Registration {
   fullName: string;
   email: string;
   phone: string;
-  organization?: string;
+  collegeName?: string;
+  universityName?: string;
+  teamSize?: number;
+  teamMembers?: string[];
   registrationDate: string;
 }
 
@@ -85,9 +88,11 @@ export default function EventRegistrationsList({
             <th className="py-3 px-4 text-gray-300 font-semibold">Name</th>
             <th className="py-3 px-4 text-gray-300 font-semibold">Email</th>
             <th className="py-3 px-4 text-gray-300 font-semibold">Phone</th>
+            <th className="py-3 px-4 text-gray-300 font-semibold">College</th>
             <th className="py-3 px-4 text-gray-300 font-semibold">
-              Organization
+              University
             </th>
+            <th className="py-3 px-4 text-gray-300 font-semibold">Team Size</th>
             <th className="py-3 px-4 text-gray-300 font-semibold">
               Registered On
             </th>
@@ -103,7 +108,13 @@ export default function EventRegistrationsList({
               <td className="py-3 px-4 text-gray-300">{registration.email}</td>
               <td className="py-3 px-4 text-gray-300">{registration.phone}</td>
               <td className="py-3 px-4 text-gray-300">
-                {registration.organization || "-"}
+                {registration.collegeName || "-"}
+              </td>
+              <td className="py-3 px-4 text-gray-300">
+                {registration.universityName || "-"}
+              </td>
+              <td className="py-3 px-4 text-gray-300">
+                {registration.teamSize || 1}
               </td>
               <td className="py-3 px-4 text-gray-400">
                 {new Date(registration.registrationDate).toLocaleDateString()}

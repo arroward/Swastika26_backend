@@ -265,8 +265,8 @@ export default function EventRegistrationForm({
             type="number"
             id="teamSize"
             name="teamSize"
-            min="0"
-            max="30"
+            min="1"
+            max="10"
             value={formData.teamSize}
             onChange={handleChange}
             required
