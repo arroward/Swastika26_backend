@@ -40,19 +40,21 @@ function convertToCSV(data: any[]): string {
 // Convert registrations to PDF format
 function convertToPDF(data: any[], filename: string): ArrayBuffer {
   const doc = new jsPDF({
-    orientation: "landscape",
+    orientation: "portrait",
     unit: "mm",
     format: "a4",
   });
 
   // Add title
-  doc.setFontSize(18);
-  doc.text("Event Registrations", 14, 20);
+  doc.setFontSize(16);
+  doc.text("Event Registrations", 105, 15, { align: "center" });
 
   // Add date
-  doc.setFontSize(10);
-  doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
-  doc.text(`Total Registrations: ${data.length}`, 14, 33);
+  doc.setFontSize(9);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 22, {
+    align: "center",
+  });
+  doc.text(`Total: ${data.length}`, 105, 27, { align: "center" });
 
   // Prepare table data
   const tableColumn = [
@@ -61,7 +63,7 @@ function convertToPDF(data: any[], filename: string): ArrayBuffer {
     "Phone",
     "Organization",
     "Event",
-    "Registration Date",
+    "Date",
   ];
   const tableRows = data.map((reg) => [
     reg.fullName || "",
@@ -76,11 +78,19 @@ function convertToPDF(data: any[], filename: string): ArrayBuffer {
   autoTable(doc, {
     head: [tableColumn],
     body: tableRows,
-    startY: 38,
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+    startY: 32,
+    styles: { fontSize: 7, cellPadding: 1.5 },
+    headStyles: { fillColor: [59, 130, 246], textColor: 255, fontSize: 8 },
     alternateRowStyles: { fillColor: [245, 245, 245] },
-    margin: { top: 38 },
+    margin: { left: 10, right: 10 },
+    columnStyles: {
+      0: { cellWidth: 30 },
+      1: { cellWidth: 40 },
+      2: { cellWidth: 25 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 35 },
+      5: { cellWidth: 22 },
+    },
   });
 
   return doc.output("arraybuffer") as ArrayBuffer;

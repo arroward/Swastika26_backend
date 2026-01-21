@@ -30,7 +30,7 @@ export async function initDatabase() {
     await sql`
       CREATE TABLE IF NOT EXISTS event_registrations (
         id SERIAL PRIMARY KEY,
-        event_id VARCHAR(255) REFERENCES events(id),
+        event_id VARCHAR(255) REFERENCES events(id) ON DELETE CASCADE,
         full_name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
         phone VARCHAR(20),
@@ -348,6 +348,137 @@ export async function assignEventToCoordinator(
     return true;
   } catch (error) {
     console.error("Error assigning event to coordinator:", error);
+    throw error;
+  }
+}
+
+// Get event IDs assigned to an admin
+export async function getAdminEventIds(adminId: string): Promise<string[]> {
+  try {
+    const result = await sql`
+      SELECT event_id
+      FROM admin_events
+      WHERE admin_id = ${adminId}
+    `;
+    return result.map((row: any) => row.event_id);
+  } catch (error) {
+    console.error("Error fetching admin event IDs:", error);
+    return [];
+  }
+}
+
+// Update event assignments for an admin (removes old assignments and adds new ones)
+export async function updateAdminEventAssignments(
+  adminId: string,
+  eventIds: string[],
+) {
+  try {
+    // Remove all existing assignments
+    await sql`
+      DELETE FROM admin_events
+      WHERE admin_id = ${adminId}
+    `;
+
+    // Add new assignments
+    if (eventIds.length > 0) {
+      for (const eventId of eventIds) {
+        await sql`
+          INSERT INTO admin_events (admin_id, event_id)
+          VALUES (${adminId}, ${eventId})
+          ON CONFLICT DO NOTHING
+        `;
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error("Error updating admin event assignments:", error);
+    throw error;
+  }
+}
+
+// Get all admins (for superadmin)
+export async function getAllAdmins() {
+  try {
+    const admins = await sql`
+      SELECT 
+        id,
+        email,
+        role,
+        name,
+        created_at as "createdAt"
+      FROM admins
+      ORDER BY created_at DESC
+    `;
+    return admins;
+  } catch (error) {
+    console.error("Error fetching all admins:", error);
+    return [];
+  }
+}
+
+// Update admin details (for superadmin)
+export async function updateAdmin(
+  adminId: string,
+  updates: {
+    email?: string;
+    password?: string;
+    role?: string;
+    name?: string;
+  },
+) {
+  try {
+    const setFields = [];
+    const values = [];
+
+    if (updates.email) {
+      setFields.push(`email = $${setFields.length + 1}`);
+      values.push(updates.email);
+    }
+    if (updates.password) {
+      setFields.push(`password = $${setFields.length + 1}`);
+      values.push(updates.password);
+    }
+    if (updates.role) {
+      setFields.push(`role = $${setFields.length + 1}`);
+      values.push(updates.role);
+    }
+    if (updates.name) {
+      setFields.push(`name = $${setFields.length + 1}`);
+      values.push(updates.name);
+    }
+
+    if (setFields.length === 0) {
+      return false;
+    }
+
+    values.push(adminId);
+
+    await sql`
+      UPDATE admins
+      SET email = ${updates.email || sql`email`},
+          password = ${updates.password || sql`password`},
+          role = ${updates.role || sql`role`},
+          name = ${updates.name || sql`name`}
+      WHERE id = ${adminId}
+    `;
+
+    return true;
+  } catch (error) {
+    console.error("Error updating admin:", error);
+    throw error;
+  }
+}
+
+// Delete admin (for superadmin)
+export async function deleteAdmin(adminId: string) {
+  try {
+    await sql`
+      DELETE FROM admins
+      WHERE id = ${adminId}
+    `;
+    return true;
+  } catch (error) {
+    console.error("Error deleting admin:", error);
     throw error;
   }
 }

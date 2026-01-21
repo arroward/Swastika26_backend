@@ -1,50 +1,10 @@
 import EventList from "@/components/EventList";
-import { Event } from "@/types/event";
+import { getEvents } from "@/lib/db";
 
-// Dummy events data
-const dummyEvents: Event[] = [
-  {
-    id: "tech-summit-2026",
-    title: "Tech Summit 2026",
-    description:
-      "Join industry leaders for a day of innovation, networking, and cutting-edge technology discussions. Learn about the latest trends in AI, cloud computing, and software development.",
-    date: "2026-04-15T09:00:00Z",
-    location: "San Francisco Convention Center",
-    imageUrl:
-      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
-    category: "Technology",
-    capacity: 200,
-    registeredCount: 87,
-  },
-  {
-    id: "design-conference-2026",
-    title: "Creative Design Conference",
-    description:
-      "Explore the future of design with workshops on UX/UI, graphic design, and creative thinking. Network with designers from around the world and showcase your portfolio.",
-    date: "2026-05-20T10:00:00Z",
-    location: "New York Design Center",
-    imageUrl:
-      "https://images.unsplash.com/photo-1558403194-611308249627?w=800&q=80",
-    category: "Design",
-    capacity: 150,
-    registeredCount: 62,
-  },
-  {
-    id: "startup-bootcamp-2026",
-    title: "Startup Bootcamp",
-    description:
-      "Intensive 2-day bootcamp for aspiring entrepreneurs. Learn how to build, launch, and scale your startup with guidance from successful founders and investors.",
-    date: "2026-06-10T09:00:00Z",
-    location: "Austin Startup Hub",
-    imageUrl:
-      "https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&q=80",
-    category: "Business",
-    capacity: 100,
-    registeredCount: 45,
-  },
-];
+export default async function Home() {
+  // Fetch events from database
+  const events = await getEvents();
 
-export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header Section */}
@@ -62,7 +22,15 @@ export default function Home() {
 
       {/* Events Section */}
       <div className="container mx-auto px-4 py-12">
-        <EventList events={dummyEvents} />
+        {events.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">
+              No events available at the moment. Check back soon!
+            </p>
+          </div>
+        ) : (
+          <EventList events={events} />
+        )}
       </div>
 
       {/* Call to Action */}

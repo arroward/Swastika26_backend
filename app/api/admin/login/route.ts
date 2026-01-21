@@ -32,18 +32,20 @@ export async function POST(request: NextRequest) {
     }
 
     // In production, use JWT tokens
+    const sessionData = {
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      role: admin.role,
+    };
+
     const response = NextResponse.json({
       success: true,
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.name,
-        role: admin.role,
-      },
+      admin: sessionData,
     });
 
     // Set secure cookie with admin session
-    response.cookies.set("admin_session", admin.id, {
+    response.cookies.set("admin_session", JSON.stringify(sessionData), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

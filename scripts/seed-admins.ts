@@ -46,7 +46,7 @@ async function seedAdmins() {
       const coordinatorId = crypto.randomUUID();
       const coordinatorPassword = hashPassword("coordinator123"); // Change this password!
 
-      await sql`
+      const coordinator = await sql`
         INSERT INTO admins (id, email, password, role, name)
         VALUES (
           ${coordinatorId},
@@ -57,12 +57,15 @@ async function seedAdmins() {
         )
         ON CONFLICT (email) DO UPDATE
         SET password = ${coordinatorPassword}
+        RETURNING id
       `;
+
+      const actualCoordinatorId = coordinator[0].id;
 
       // Assign the coordinator to the first event
       await sql`
         INSERT INTO admin_events (admin_id, event_id)
-        VALUES (${coordinatorId}, ${events[0].id})
+        VALUES (${actualCoordinatorId}, ${events[0].id})
         ON CONFLICT (admin_id, event_id) DO NOTHING
       `;
 
@@ -77,7 +80,7 @@ async function seedAdmins() {
         const coordinator2Id = crypto.randomUUID();
         const coordinator2Password = hashPassword("coordinator2_123");
 
-        await sql`
+        const coordinator2 = await sql`
           INSERT INTO admins (id, email, password, role, name)
           VALUES (
             ${coordinator2Id},
@@ -88,11 +91,14 @@ async function seedAdmins() {
           )
           ON CONFLICT (email) DO UPDATE
           SET password = ${coordinator2Password}
+          RETURNING id
         `;
+
+        const actualCoordinator2Id = coordinator2[0].id;
 
         await sql`
           INSERT INTO admin_events (admin_id, event_id)
-          VALUES (${coordinator2Id}, ${events[1].id})
+          VALUES (${actualCoordinator2Id}, ${events[1].id})
           ON CONFLICT (admin_id, event_id) DO NOTHING
         `;
 

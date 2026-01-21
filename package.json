@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "tsx scripts/seed.ts",
-    "seed:admins": "tsx scripts/seed-admins.ts"
+    "seed": "dotenv -e .env -- tsx scripts/seed.ts",
+    "seed:admins": "dotenv -e .env -- tsx scripts/seed-admins.ts",
+    "verify-db": "dotenv -e .env -- tsx scripts/verify-database.ts",
+    "fix-db": "dotenv -e .env -- tsx scripts/fix-database.ts",
+    "test-db": "dotenv -e .env -- tsx scripts/test-relationships.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
@@ -24,6 +27,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
     "tailwindcss": "^4",

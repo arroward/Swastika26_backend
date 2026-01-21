@@ -7,9 +7,13 @@ config({ path: resolve(process.cwd(), ".env") });
 // Verify DATABASE_URL is loaded
 if (!process.env.DATABASE_URL) {
   console.error("❌ DATABASE_URL not found in .env file");
+  console.error(
+    "Please create a .env file with DATABASE_URL=your_connection_string",
+  );
   process.exit(1);
 }
 
+// Import after env is loaded
 import { sql, initDatabase } from "../lib/db";
 
 const sampleEvents = [

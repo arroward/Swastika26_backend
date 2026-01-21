@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import AdminHeader from "@/components/AdminHeader";
 import EventSelect from "@/components/EventSelect";
 import RegistrationsTable from "@/components/RegistrationsTable";
+import AdminManagement from "@/components/AdminManagement";
+import EventRegistrationsList from "@/components/EventRegistrationsList";
 import { Event } from "@/types/event";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -20,35 +22,94 @@ export default function AdminDashboard() {
   const [admin, setAdmin] = useState<AdminInfo | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [registrations, setRegistrations] = useState([]);
+  const [admins, setAdmins] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    "registrations" | "admins" | "events"
+  >("registrations");
+  const [selectedCoordinatorEvent, setSelectedCoordinatorEvent] = useState<
+    string | null
+  >(null);
+  const [coordinatorRegistrations, setCoordinatorRegistrations] = useState([]);
 
   // Load admin info from localStorage
   useEffect(() => {
-    const adminData = localStorage.getItem("admin");
-    if (!adminData) {
-      router.push("/admin/login");
-      return;
-    }
+    const verifySession = async () => {
+      try {
+        // Check localStorage first for quick loading
+        const adminData = localStorage.getItem("admin");
+        if (!adminData) {
+          router.push("/admin/login");
+          return;
+        }
 
-    const parsedAdmin = JSON.parse(adminData) as AdminInfo;
-    setAdmin(parsedAdmin);
-    setIsLoading(false);
+        // Verify session with server
+        const response = await fetch("/api/admin/session");
+        const data = await response.json();
 
-    // Fetch events
-    fetchEvents(parsedAdmin);
+        if (!data.authenticated) {
+          // Session expired or invalid, clear localStorage and redirect
+          localStorage.removeItem("admin");
+          router.push("/admin/login");
+          return;
+        }
+
+        const parsedAdmin = JSON.parse(adminData) as AdminInfo;
+        setAdmin(parsedAdmin);
+        setIsLoading(false);
+
+        // Fetch events
+        fetchEvents(parsedAdmin);
+      } catch (error) {
+        console.error("Session verification error:", error);
+        localStorage.removeItem("admin");
+        router.push("/admin/login");
+      }
+    };
+
+    verifySession();
   }, [router]);
+
+  // Fetch admins when switching to admins tab
+  useEffect(() => {
+    if (activeTab === "admins" && admin?.role === "superadmin") {
+      fetchAdmins();
+    }
+  }, [activeTab, admin]);
 
   const fetchEvents = async (adminData: AdminInfo) => {
     try {
+      console.log("Fetching events for:", adminData.email, adminData.role);
       const response = await fetch(`/api/admin/events?role=${adminData.role}`);
       const data = await response.json();
+      console.log("Events API response:", data);
+
       if (data.success) {
+        console.log("Setting events:", data.data.length);
         setEvents(data.data);
+      } else {
+        console.error("Failed to fetch events:", data.error);
       }
     } catch (error) {
       console.error("Error fetching events:", error);
+    }
+  };
+
+  const fetchAdmins = async () => {
+    try {
+      const response = await fetch("/api/admin/manage");
+      const data = await response.json();
+      console.log("Fetched admins data:", data);
+      if (data.success) {
+        console.log("Setting admins:", data.data);
+        setAdmins(data.data);
+      } else {
+        console.error("Failed to fetch admins:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching admins:", error);
     }
   };
 
@@ -82,6 +143,33 @@ export default function AdminDashboard() {
     fetchRegistrations(eventId);
   };
 
+  const fetchCoordinatorRegistrations = async (eventId: string) => {
+    setIsLoadingData(true);
+    try {
+      const response = await fetch(
+        `/api/admin/registrations?role=event_coordinator&eventId=${eventId}`,
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setCoordinatorRegistrations(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching coordinator registrations:", error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
+  const handleCoordinatorEventSelect = (eventId: string) => {
+    setSelectedCoordinatorEvent(eventId);
+    if (eventId) {
+      fetchCoordinatorRegistrations(eventId);
+    } else {
+      setCoordinatorRegistrations([]);
+    }
+  };
+
   const handleDownload = async (format: "csv" | "pdf") => {
     if (!admin) return;
 
@@ -90,8 +178,8 @@ export default function AdminDashboard() {
       url.searchParams.set("role", admin.role);
       url.searchParams.set("format", format);
 
-      if (admin.role === "event_coordinator" && selectedEventId) {
-        url.searchParams.set("eventId", selectedEventId);
+      if (admin.role === "event_coordinator" && selectedCoordinatorEvent) {
+        url.searchParams.set("eventId", selectedCoordinatorEvent);
       }
 
       const response = await fetch(url.toString());
@@ -108,8 +196,8 @@ export default function AdminDashboard() {
       const filename =
         admin.role === "superadmin"
           ? `all_registrations_${new Date().toISOString().split("T")[0]}`
-          : selectedEventId
-            ? `registrations_${selectedEventId}_${new Date().toISOString().split("T")[0]}`
+          : selectedCoordinatorEvent
+            ? `registrations_${selectedCoordinatorEvent}_${new Date().toISOString().split("T")[0]}`
             : "registrations";
 
       link.setAttribute("download", `${filename}.${format}`);
@@ -158,25 +246,206 @@ export default function AdminDashboard() {
                 Super Admin Access
               </h2>
               <p className="text-blue-200">
-                You have access to all participant data across all events.
+                You have access to all participant data and admin management.
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                setSelectedEventId(null);
-                fetchRegistrations();
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition duration-200"
-            >
-              View All Registrations
-            </button>
+            {/* Tab Navigation */}
+            <div className="flex gap-4 border-b border-gray-700">
+              <button
+                onClick={() => setActiveTab("registrations")}
+                className={`pb-4 px-4 font-semibold transition ${
+                  activeTab === "registrations"
+                    ? "text-blue-400 border-b-2 border-blue-400"
+                    : "text-gray-400 hover:text-gray-300"
+                }`}
+              >
+                Registrations
+              </button>
+              <button
+                onClick={() => setActiveTab("events")}
+                className={`pb-4 px-4 font-semibold transition ${
+                  activeTab === "events"
+                    ? "text-blue-400 border-b-2 border-blue-400"
+                    : "text-gray-400 hover:text-gray-300"
+                }`}
+              >
+                Events
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("admins");
+                  fetchAdmins();
+                }}
+                className={`pb-4 px-4 font-semibold transition ${
+                  activeTab === "admins"
+                    ? "text-blue-400 border-b-2 border-blue-400"
+                    : "text-gray-400 hover:text-gray-300"
+                }`}
+              >
+                Manage Admins
+              </button>
+            </div>
 
-            {registrations.length > 0 && (
-              <RegistrationsTable
-                registrations={registrations}
-                isLoading={isLoadingData}
-                onDownload={handleDownload}
+            {/* Registrations Tab */}
+            {activeTab === "registrations" && (
+              <>
+                <button
+                  onClick={() => {
+                    setSelectedEventId(null);
+                    fetchRegistrations();
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition duration-200"
+                >
+                  View All Registrations
+                </button>
+
+                {registrations.length > 0 && (
+                  <RegistrationsTable
+                    registrations={registrations}
+                    isLoading={isLoadingData}
+                    onDownload={handleDownload}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Events Tab */}
+            {activeTab === "events" && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-white">
+                    All Events ({events.length})
+                  </h3>
+                </div>
+
+                {events.length === 0 ? (
+                  <div className="bg-gray-800 rounded-lg p-8 text-center">
+                    <p className="text-gray-400">
+                      No events found in the database.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid gap-6">
+                    {events.map((event) => (
+                      <div
+                        key={event.id}
+                        className="bg-gray-800 border border-gray-700 rounded-lg p-6 hover:border-gray-600 transition"
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <h4 className="text-xl font-bold text-white mb-2">
+                              {event.title}
+                            </h4>
+                            <p className="text-gray-400 text-sm mb-3">
+                              {event.description}
+                            </p>
+                            <div className="flex flex-wrap gap-4 text-sm">
+                              <div className="flex items-center text-gray-300">
+                                <svg
+                                  className="w-4 h-4 mr-2"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                  />
+                                </svg>
+                                {new Date(event.date).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  },
+                                )}
+                              </div>
+                              <div className="flex items-center text-gray-300">
+                                <svg
+                                  className="w-4 h-4 mr-2"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                </svg>
+                                {event.location}
+                              </div>
+                              <div className="flex items-center text-gray-300">
+                                <svg
+                                  className="w-4 h-4 mr-2"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                                  />
+                                </svg>
+                                {event.category}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                event.registeredCount >= event.capacity
+                                  ? "bg-red-900 text-red-200"
+                                  : event.registeredCount >=
+                                      event.capacity * 0.8
+                                    ? "bg-yellow-900 text-yellow-200"
+                                    : "bg-green-900 text-green-200"
+                              }`}
+                            >
+                              {event.registeredCount}/{event.capacity}{" "}
+                              registered
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setActiveTab("registrations");
+                              setSelectedEventId(event.id);
+                              fetchRegistrations(event.id);
+                            }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 px-4 rounded transition"
+                          >
+                            View Registrations
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Admins Tab */}
+            {activeTab === "admins" && (
+              <AdminManagement
+                admins={admins}
+                currentAdminId={admin.id}
+                onUpdate={fetchAdmins}
               />
             )}
           </div>
@@ -190,36 +459,119 @@ export default function AdminDashboard() {
                 Event Coordinator Access
               </h2>
               <p className="text-green-200">
-                You can view and download registrations for the events you
-                manage.
+                You manage {events.length} event{events.length !== 1 ? "s" : ""}
+                . Select an event to view registered students.
               </p>
             </div>
 
-            <EventSelect
-              events={events}
-              selectedEventId={selectedEventId}
-              onEventSelect={handleEventSelect}
-              isLoading={isLoadingData}
-            />
+            {/* Event Selection Dropdown */}
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Select Event to View Students
+              </label>
+              <select
+                value={selectedCoordinatorEvent || ""}
+                onChange={(e) => handleCoordinatorEventSelect(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">-- Select an event --</option>
+                {events.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {event.title} ({event.registeredCount}/{event.capacity}{" "}
+                    registered)
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            {selectedEventId && registrations.length > 0 && (
-              <RegistrationsTable
-                registrations={registrations}
-                eventTitle={events.find((e) => e.id === selectedEventId)?.title}
-                isLoading={isLoadingData}
-                onDownload={handleDownload}
-              />
+            {/* Display Registrations for Selected Event */}
+            {selectedCoordinatorEvent && (
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-white">
+                      {
+                        events.find((e) => e.id === selectedCoordinatorEvent)
+                          ?.title
+                      }
+                    </h3>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Showing all registered students for this event
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDownload("csv")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition duration-200"
+                  >
+                    Download CSV
+                  </button>
+                </div>
+
+                {isLoadingData ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-400">Loading registrations...</p>
+                  </div>
+                ) : coordinatorRegistrations.length === 0 ? (
+                  <div className="text-center py-6 bg-gray-900 rounded">
+                    <p className="text-gray-400">
+                      No registrations yet for this event.
+                    </p>
+                  </div>
+                ) : (
+                  <RegistrationsTable
+                    registrations={coordinatorRegistrations}
+                    isLoading={isLoadingData}
+                    onDownload={handleDownload}
+                  />
+                )}
+              </div>
             )}
 
-            {selectedEventId &&
-              registrations.length === 0 &&
-              !isLoadingData && (
-                <div className="bg-gray-800 rounded-lg p-8 text-center">
-                  <p className="text-gray-300 text-lg">
-                    No registrations for this event yet.
-                  </p>
-                </div>
-              )}
+            {/* Show all events in cards if no event is selected */}
+            {!selectedCoordinatorEvent && events.length > 0 && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-300">
+                  Your Assigned Events
+                </h3>
+                {events.map((event) => (
+                  <div
+                    key={event.id}
+                    className="bg-gray-800 border border-gray-700 rounded-lg p-6"
+                  >
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-white">
+                          {event.title}
+                        </h3>
+                        <p className="text-gray-400 text-sm mt-1">
+                          {event.description}
+                        </p>
+                        <p className="text-gray-500 text-sm mt-1">
+                          Date: {new Date(event.date).toLocaleDateString()} |
+                          Location: {event.location}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleCoordinatorEventSelect(event.id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition duration-200"
+                      >
+                        View Students
+                      </button>
+                    </div>
+
+                    <EventRegistrationsList eventId={event.id} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {events.length === 0 && (
+              <div className="bg-gray-800 rounded-lg p-8 text-center">
+                <p className="text-gray-300 text-lg">
+                  No events assigned to you yet.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </main>
