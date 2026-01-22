@@ -20,12 +20,12 @@ export default async function EventRegisterPage({ params }: PageProps) {
   const isFullyBooked = event.registeredCount >= event.capacity;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-12">
+    <div className="min-h-screen py-12">
       <div className="container mx-auto px-4">
         {/* Back Button */}
         <Link
           href="/"
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6 font-semibold"
+          className="inline-flex items-center text-red-400 hover:text-red-300 mb-6 font-semibold"
         >
           <svg
             className="w-5 h-5 mr-2"
@@ -45,7 +45,7 @@ export default async function EventRegisterPage({ params }: PageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Event Info Card */}
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+          <div className="card-border rounded-2xl shadow-xl overflow-hidden">
             <img
               src={event.imageUrl}
               alt={event.title}
@@ -53,7 +53,7 @@ export default async function EventRegisterPage({ params }: PageProps) {
             />
             <div className="p-8">
               <div className="flex items-center justify-between mb-4">
-                <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                <span className="glass text-red-300 px-4 py-1 rounded-full text-sm font-semibold border border-red-400/30">
                   {event.category}
                 </span>
                 {isFullyBooked && (
@@ -63,18 +63,18 @@ export default async function EventRegisterPage({ params }: PageProps) {
                 )}
               </div>
 
-              <h1 className="text-4xl font-bold text-gray-800 mb-4">
+              <h1 className="text-4xl font-bold text-white mb-4">
                 {event.title}
               </h1>
 
-              <p className="text-gray-600 mb-6 leading-relaxed">
+              <p className="text-white/80 mb-6 leading-relaxed">
                 {event.description}
               </p>
 
               <div className="space-y-4">
                 <div className="flex items-start">
                   <svg
-                    className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1"
+                    className="w-6 h-6 mr-3 text-red-400 flex-shrink-0 mt-1"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -87,8 +87,8 @@ export default async function EventRegisterPage({ params }: PageProps) {
                     />
                   </svg>
                   <div>
-                    <p className="font-semibold text-gray-800">Date & Time</p>
-                    <p className="text-gray-600">
+                    <p className="font-semibold text-white">Date & Time</p>
+                    <p className="text-white/70">
                       {new Date(event.date).toLocaleDateString("en-US", {
                         weekday: "long",
                         year: "numeric",
@@ -101,7 +101,7 @@ export default async function EventRegisterPage({ params }: PageProps) {
 
                 <div className="flex items-start">
                   <svg
-                    className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1"
+                    className="w-6 h-6 mr-3 text-red-400 flex-shrink-0 mt-1"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -120,14 +120,14 @@ export default async function EventRegisterPage({ params }: PageProps) {
                     />
                   </svg>
                   <div>
-                    <p className="font-semibold text-gray-800">Location</p>
-                    <p className="text-gray-600">{event.location}</p>
+                    <p className="font-semibold text-white">Location</p>
+                    <p className="text-white/70">{event.location}</p>
                   </div>
                 </div>
 
                 <div className="flex items-start">
                   <svg
-                    className="w-6 h-6 mr-3 text-blue-600 flex-shrink-0 mt-1"
+                    className="w-6 h-6 mr-3 text-red-400 flex-shrink-0 mt-1"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -140,12 +140,12 @@ export default async function EventRegisterPage({ params }: PageProps) {
                     />
                   </svg>
                   <div>
-                    <p className="font-semibold text-gray-800">Capacity</p>
-                    <p className="text-gray-600">
+                    <p className="font-semibold text-white">Capacity</p>
+                    <p className="text-white/70">
                       {event.registeredCount} / {event.capacity} registered
                     </p>
                     {!isFullyBooked && (
-                      <p className="text-green-600 font-semibold">
+                      <p className="text-green-400 font-semibold">
                         {event.capacity - event.registeredCount} spots remaining
                       </p>
                     )}
@@ -154,8 +154,8 @@ export default async function EventRegisterPage({ params }: PageProps) {
               </div>
 
               {isFullyBooked && (
-                <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-red-700 font-semibold">
+                <div className="mt-6 bg-red-900/30 border border-red-600/50 rounded-lg p-4 backdrop-blur-sm">
+                  <p className="text-red-200 font-semibold">
                     This event is fully booked. Registration is currently
                     closed.
                   </p>
@@ -167,10 +167,10 @@ export default async function EventRegisterPage({ params }: PageProps) {
           {/* Registration Form */}
           <div>
             {isFullyBooked ? (
-              <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+              <div className="card-border rounded-2xl shadow-xl p-8 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-900/30 rounded-full mb-4 border border-red-600/30">
                   <svg
-                    className="w-8 h-8 text-red-600"
+                    className="w-8 h-8 text-red-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -183,15 +183,15 @@ export default async function EventRegisterPage({ params }: PageProps) {
                     />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                <h2 className="text-2xl font-bold text-white mb-4">
                   Registration Closed
                 </h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-white/70 mb-6">
                   Unfortunately, this event has reached its maximum capacity.
                 </p>
                 <Link
                   href="/"
-                  className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all"
+                  className="inline-block bg-red-600/80 hover:bg-red-600 backdrop-blur-sm text-white px-6 py-3 rounded-lg font-semibold transition-all border border-red-500/50"
                 >
                   Browse Other Events
                 </Link>

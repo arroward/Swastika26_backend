@@ -20,19 +20,59 @@ function convertToCSV(data: any[]): string {
     return "";
   }
 
-  const headers = Object.keys(data[0]).join(",");
-  const rows = data.map((row) =>
-    Object.values(row)
+  // Define headers explicitly
+  const headers = [
+    "Name",
+    "Email",
+    "Phone",
+    "College",
+    "University",
+    "Team Size",
+    "Team Members",
+    "Event",
+    "Registration Date",
+  ].join(",");
+
+  const rows = data.map((reg) => {
+    // Handle team members
+    let teamMembersText = "";
+    if (reg.teamMembers) {
+      try {
+        const members =
+          typeof reg.teamMembers === "string"
+            ? JSON.parse(reg.teamMembers)
+            : reg.teamMembers;
+        teamMembersText =
+          Array.isArray(members) && members.length > 0
+            ? members.filter((m) => m).join("; ")
+            : "";
+      } catch (e) {
+        teamMembersText = "";
+      }
+    }
+
+    const values = [
+      reg.fullName || "",
+      reg.email || "",
+      reg.phone || "",
+      reg.collegeName || "",
+      reg.universityName || "",
+      reg.teamSize || "1",
+      teamMembersText,
+      reg.eventTitle || "",
+      new Date(reg.registrationDate).toLocaleDateString() || "",
+    ];
+
+    return values
       .map((value) => {
-        if (value === null || value === undefined) return "";
         const stringValue = String(value);
-        // Escape quotes and wrap in quotes if contains comma
+        // Escape quotes and wrap in quotes if contains comma or quotes
         return stringValue.includes(",") || stringValue.includes('"')
           ? `"${stringValue.replace(/"/g, '""')}"`
           : stringValue;
       })
-      .join(","),
-  );
+      .join(",");
+  });
 
   return [headers, ...rows].join("\n");
 }
@@ -68,17 +108,36 @@ function convertToPDF(data: any[], filename: string): ArrayBuffer {
     "Event",
     "Date",
   ];
-  const tableRows = data.map((reg) => [
-    reg.fullName || "",
-    reg.email || "",
-    reg.phone || "",
-    reg.collegeName || "-",
-    reg.universityName || "-",
-    reg.teamSize || "1",
-    reg.teamMembers ? JSON.parse(reg.teamMembers).join(", ") : "-",
-    reg.eventTitle || "-",
-    new Date(reg.registrationDate).toLocaleDateString() || "",
-  ]);
+  const tableRows = data.map((reg) => {
+    // Handle team members - could be string (JSON) or already parsed array
+    let teamMembersText = "-";
+    if (reg.teamMembers) {
+      try {
+        const members =
+          typeof reg.teamMembers === "string"
+            ? JSON.parse(reg.teamMembers)
+            : reg.teamMembers;
+        teamMembersText =
+          Array.isArray(members) && members.length > 0
+            ? members.filter((m) => m).join(", ")
+            : "-";
+      } catch (e) {
+        teamMembersText = "-";
+      }
+    }
+
+    return [
+      reg.fullName || "",
+      reg.email || "",
+      reg.phone || "",
+      reg.collegeName || "-",
+      reg.universityName || "-",
+      reg.teamSize || "1",
+      teamMembersText,
+      reg.eventTitle || "-",
+      new Date(reg.registrationDate).toLocaleDateString() || "",
+    ];
+  });
 
   // Add table
   autoTable(doc, {

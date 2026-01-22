@@ -11,39 +11,63 @@ export default function EventCard({ event }: EventCardProps) {
 
   return (
     <Link href={`/${event.id}/register`}>
-      <div className="group relative bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 cursor-pointer">
-        {/* Event Image */}
-        <div className="relative h-48 overflow-hidden">
-          <img
-            src={event.imageUrl}
-            alt={event.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-          />
-          {/* Category Badge */}
-          <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
-            {event.category}
-          </div>
-          {/* Fully Booked Badge */}
-          {isFullyBooked && (
-            <div className="absolute top-4 left-4 bg-red-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
-              Fully Booked
+      <div className="relative card-border overflow-hidden rounded-2xl flex flex-col transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-600/30 animate-float cursor-pointer group">
+        {/* Event Image with overlay */}
+        <div className="p-4 flex justify-center relative">
+          <div className="w-full h-48 rounded-xl gradient-border inner-glow overflow-hidden relative">
+            <img
+              src={event.imageUrl}
+              alt={event.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+
+            {/* Animated grid overlay */}
+            <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity">
+              <div
+                className="w-full h-full"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(90deg, rgba(220, 38, 38, 0.3) 1px, transparent 1px), linear-gradient(rgba(220, 38, 38, 0.3) 1px, transparent 1px)",
+                  backgroundSize: "20px 20px",
+                }}
+              />
             </div>
-          )}
+
+            {/* Category Badge */}
+            <div className="absolute top-3 right-3 glass text-red-300 px-3 py-1.5 rounded-full text-xs font-medium border border-red-400/30 backdrop-blur-md">
+              {event.category}
+            </div>
+
+            {/* Fully Booked Badge */}
+            {isFullyBooked && (
+              <div className="absolute top-3 left-3 bg-red-600/90 text-white px-3 py-1.5 rounded-full text-xs font-semibold border border-red-400/50 backdrop-blur-md">
+                Fully Booked
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Divider with glow effect */}
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+
         {/* Event Details */}
-        <div className="p-6">
-          <h3 className="text-2xl font-bold text-gray-800 mb-3 group-hover:text-blue-600 transition-colors">
+        <div className="p-4 space-y-3">
+          {/* Title */}
+          <h3 className="text-lg font-medium text-white group-hover:text-red-300 transition-colors">
             {event.title}
           </h3>
 
-          <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
+          {/* Description */}
+          <p className="text-white/70 leading-relaxed text-xs line-clamp-2">
+            {event.description}
+          </p>
 
-          {/* Event Info */}
-          <div className="space-y-2 mb-4">
-            <div className="flex items-center text-gray-700">
+          {/* Event Info Grid */}
+          <div className="space-y-2">
+            {/* Date */}
+            <div className="flex items-center text-white/80">
               <svg
-                className="w-5 h-5 mr-2 text-blue-600"
+                className="w-4 h-4 mr-2 text-red-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -55,19 +79,20 @@ export default function EventCard({ event }: EventCardProps) {
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
-              <span className="text-sm">
+              <span className="text-xs">
                 {new Date(event.date).toLocaleDateString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
+                  weekday: "short",
+                  month: "short",
                   day: "numeric",
+                  year: "numeric",
                 })}
               </span>
             </div>
 
-            <div className="flex items-center text-gray-700">
+            {/* Location */}
+            <div className="flex items-center text-white/80">
               <svg
-                className="w-5 h-5 mr-2 text-blue-600"
+                className="w-4 h-4 mr-2 text-red-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -85,15 +110,13 @@ export default function EventCard({ event }: EventCardProps) {
                   d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                 />
               </svg>
-              <span className="text-sm">{event.location}</span>
+              <span className="text-xs">{event.location}</span>
             </div>
-          </div>
 
-          {/* Capacity Info */}
-          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-            <div className="flex items-center">
+            {/* Capacity */}
+            <div className="flex items-center text-white/80">
               <svg
-                className="w-5 h-5 mr-2 text-blue-600"
+                className="w-4 h-4 mr-2 text-red-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -105,25 +128,44 @@ export default function EventCard({ event }: EventCardProps) {
                   d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-              <span className="text-sm text-gray-700">
+              <span className="text-xs">
                 {isFullyBooked ? (
-                  <span className="text-red-600 font-semibold">
+                  <span className="text-red-400 font-semibold">
                     No spots left
                   </span>
                 ) : (
                   <span>
-                    <span className="font-semibold text-green-600">
+                    <span className="font-semibold text-green-400">
                       {availableSpots}
                     </span>{" "}
-                    spots left
+                    spots available
                   </span>
                 )}
               </span>
             </div>
+          </div>
 
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold group-hover:from-blue-700 group-hover:to-purple-700 transition-all">
-              Register Now →
+          {/* Action Button */}
+          <div className="flex justify-between items-center pt-3">
+            <div className="text-red-400 hover:text-red-300 transition flex items-center text-xs font-medium glass px-3 py-1.5 rounded-lg border border-red-400/30 group-hover:border-red-400/50">
+              Register Now
+              <svg
+                className="w-3 h-3 ml-1 transition-transform group-hover:translate-x-1"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M5 12H19M19 12L12 5M19 12L12 19"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </div>
+            <span className="text-white/50 text-xs glass px-2 py-1 rounded-full border border-white/10">
+              {isFullyBooked ? "Closed" : "Open"}
+            </span>
           </div>
         </div>
       </div>

@@ -23,13 +23,13 @@ export default function FormInput({
   error,
   multiline = false,
 }: FormInputProps) {
-  const inputClasses = `w-full px-4 py-3 rounded-lg border ${
-    error ? "border-red-500" : "border-gray-300"
-  } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-900 bg-white`;
+  const inputClasses = `w-full px-4 py-3 rounded-lg glass border ${
+    error ? "border-red-500" : "border-red-600/30"
+  } focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-transparent transition-all text-white placeholder-red-300/50`;
 
   return (
     <div className="mb-6">
-      <label htmlFor={name} className="block text-gray-700 font-semibold mb-2">
+      <label htmlFor={name} className="block text-red-200 font-semibold mb-2">
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>

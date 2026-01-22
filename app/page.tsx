@@ -6,14 +6,14 @@ export default async function Home() {
   const events = await getEvents();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+      <div className="bg-gradient-to-r from-red-900/40 via-red-800/30 to-red-900/40 backdrop-blur-sm text-white py-16 border-b border-red-600/20">
         <div className="container mx-auto px-4">
-          <h1 className="text-5xl font-bold mb-4 text-center">
+          <h1 className="text-5xl font-bold mb-4 text-center text-white drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
             Upcoming Events
           </h1>
-          <p className="text-xl text-center text-blue-100 max-w-2xl mx-auto">
+          <p className="text-xl text-center text-red-100 max-w-2xl mx-auto">
             Discover and register for exciting events. Connect with like-minded
             individuals and expand your horizons.
           </p>
@@ -24,7 +24,7 @@ export default async function Home() {
       <div className="container mx-auto px-4 py-12">
         {events.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">
+            <p className="text-red-200 text-lg">
               No events available at the moment. Check back soon!
             </p>
           </div>
@@ -35,9 +35,11 @@ export default async function Home() {
 
       {/* Call to Action */}
       <div className="container mx-auto px-4 pb-16">
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white text-center shadow-xl">
-          <h2 className="text-3xl font-bold mb-4">Ready to Join?</h2>
-          <p className="text-lg mb-6 text-purple-100">
+        <div className="bg-gradient-to-r from-red-900/40 to-red-800/40 backdrop-blur-sm rounded-2xl p-8 text-white text-center shadow-xl border border-red-600/30">
+          <h2 className="text-3xl font-bold mb-4 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]">
+            Ready to Join?
+          </h2>
+          <p className="text-lg mb-6 text-red-100">
             Click on any event card above to register and secure your spot!
           </p>
         </div>
