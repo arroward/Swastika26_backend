@@ -8,6 +8,8 @@ export interface Event {
   category: string;
   capacity: number;
   registeredCount: number;
+  registrationFee?: number; // Optional fee amount, if null or 0 then free
+  isOnline: boolean; // true for online events, false for offline
 }
 
 export interface EventRegistration {
@@ -18,6 +20,9 @@ export interface EventRegistration {
   phone: string;
   organization?: string;
   registrationDate?: string;
+  upiTransactionId?: string; // For paid events
+  accountHolderName?: string; // For paid events
+  uploadFileUrl?: string; // For online events
 }
 
 export type AdminRole = "superadmin" | "event_coordinator";

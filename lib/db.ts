@@ -85,7 +85,9 @@ export async function getEvents(): Promise<Event[]> {
         image_url as "imageUrl",
         category,
         capacity,
-        registered_count as "registeredCount"
+        registered_count as "registeredCount",
+        registration_fee as "registrationFee",
+        is_online as "isOnline"
       FROM events
       ORDER BY date ASC
     `;
@@ -108,7 +110,9 @@ export async function getEventById(id: string): Promise<Event | null> {
         image_url as "imageUrl",
         category,
         capacity,
-        registered_count as "registeredCount"
+        registered_count as "registeredCount",
+        registration_fee as "registrationFee",
+        is_online as "isOnline"
       FROM events
       WHERE id = ${id}
     `;
@@ -128,10 +132,25 @@ export async function registerForEvent(registration: {
   universityName: string;
   teamSize: number;
   teamMembers?: string[];
+  upiTransactionId?: string;
+  accountHolderName?: string;
+  uploadFileUrl?: string;
 }) {
   try {
     const result = await sql`
-      INSERT INTO event_registrations (event_id, full_name, email, phone, college_name, university_name, team_size, team_members)
+      INSERT INTO event_registrations (
+        event_id, 
+        full_name, 
+        email, 
+        phone, 
+        college_name, 
+        university_name, 
+        team_size, 
+        team_members,
+        upi_transaction_id,
+        account_holder_name,
+        upload_file_url
+      )
       VALUES (
         ${registration.eventId}, 
         ${registration.fullName}, 
@@ -140,7 +159,10 @@ export async function registerForEvent(registration: {
         ${registration.collegeName}, 
         ${registration.universityName}, 
         ${registration.teamSize}, 
-        ${JSON.stringify(registration.teamMembers || [])}
+        ${JSON.stringify(registration.teamMembers || [])},
+        ${registration.upiTransactionId || null},
+        ${registration.accountHolderName || null},
+        ${registration.uploadFileUrl || null}
       )
       RETURNING id
     `;
@@ -225,6 +247,9 @@ export async function getEventRegistrations(eventId: string) {
         r.university_name as "universityName",
         r.team_size as "teamSize",
         r.team_members as "teamMembers",
+        r.upi_transaction_id as "upiTransactionId",
+        r.account_holder_name as "accountHolderName",
+        r.upload_file_url as "uploadFileUrl",
         r.registration_date as "registrationDate"
       FROM event_registrations r
       INNER JOIN events e ON r.event_id = e.id
@@ -253,6 +278,9 @@ export async function getAllRegistrations() {
         r.university_name as "universityName",
         r.team_size as "teamSize",
         r.team_members as "teamMembers",
+        r.upi_transaction_id as "upiTransactionId",
+        r.account_holder_name as "accountHolderName",
+        r.upload_file_url as "uploadFileUrl",
         r.registration_date as "registrationDate"
       FROM event_registrations r
       INNER JOIN events e ON r.event_id = e.id
@@ -280,6 +308,9 @@ export async function getCoordinatorRegistrations(adminId: string) {
         r.university_name as "universityName",
         r.team_size as "teamSize",
         r.team_members as "teamMembers",
+        r.upi_transaction_id as "upiTransactionId",
+        r.account_holder_name as "accountHolderName",
+        r.upload_file_url as "uploadFileUrl",
         r.registration_date as "registrationDate"
       FROM event_registrations r
       INNER JOIN events e ON r.event_id = e.id
@@ -307,6 +338,8 @@ export async function getRegistrationsByEvent(eventId: string) {
         university_name as "universityName",
         team_size as "teamSize",
         team_members as "teamMembers",
+        upi_transaction_id as "upiTransactionId",
+        account_holder_name as "accountHolderName",
         registration_date as "registrationDate"
       FROM event_registrations
       WHERE event_id = ${eventId}

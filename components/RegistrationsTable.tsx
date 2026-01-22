@@ -122,6 +122,15 @@ export default function RegistrationsTable({
                 Team Size
               </th>
               <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                UPI Transaction ID
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                Account Holder
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                Uploaded File
+              </th>
+              <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
                 Registration Date
               </th>
               {!eventTitle && (
@@ -147,6 +156,45 @@ export default function RegistrationsTable({
                   {reg.universityName || "-"}
                 </td>
                 <td className="px-6 py-4 text-gray-200">{reg.teamSize || 1}</td>
+                <td className="px-6 py-4 text-gray-200">
+                  {reg.upiTransactionId ? (
+                    <span className="font-mono text-sm bg-green-900/30 px-2 py-1 rounded border border-green-600/30">
+                      {reg.upiTransactionId}
+                    </span>
+                  ) : (
+                    <span className="text-gray-500">-</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 text-gray-200">
+                  {reg.accountHolderName || "-"}
+                </td>
+                <td className="px-6 py-4 text-gray-200">
+                  {reg.uploadFileUrl ? (
+                    <a
+                      href={reg.uploadFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      View File
+                    </a>
+                  ) : (
+                    <span className="text-gray-500">-</span>
+                  )}
+                </td>
                 <td className="px-6 py-4 text-gray-400 text-sm">
                   {new Date(reg.registrationDate).toLocaleDateString()}
                 </td>

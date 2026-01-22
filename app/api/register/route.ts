@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { registerForEvent } from "@/lib/db";
+import { registerForEvent, getEventById } from "@/lib/db";
+import { uploadToR2 } from "@/lib/r2-storage";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const formData = await request.formData();
 
-    const {
-      eventId,
-      fullName,
-      email,
-      phone,
-      collegeName,
-      universityName,
-      teamSize,
-      teamMembers,
-    } = body;
+    const eventId = formData.get("eventId") as string;
+    const fullName = formData.get("fullName") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const collegeName = formData.get("collegeName") as string;
+    const universityName = formData.get("universityName") as string;
+    const teamSize = parseInt(formData.get("teamSize") as string) || 1;
+    const teamMembers = JSON.parse(
+      (formData.get("teamMembers") as string) || "[]",
+    );
+    const upiTransactionId = formData.get("upiTransactionId") as string;
+    const accountHolderName = formData.get("accountHolderName") as string;
+    const file = formData.get("file") as File | null;
 
     // Validate required fields
     if (
@@ -49,6 +53,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if event exists and if it's online
+    const event = await getEventById(eventId);
+    if (!event) {
+      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    }
+
+    // Upload file to R2 if event is online and file is provided
+    let uploadFileUrl: string | undefined;
+    if (event.isOnline) {
+      if (!file) {
+        return NextResponse.json(
+          { error: "File upload is required for online events" },
+          { status: 400 },
+        );
+      }
+
+      try {
+        uploadFileUrl = await uploadToR2(file, "event-registrations");
+      } catch (uploadError) {
+        console.error("File upload error:", uploadError);
+        return NextResponse.json(
+          { error: "Failed to upload file. Please try again." },
+          { status: 500 },
+        );
+      }
+    }
+
     // Register for event
     const result = await registerForEvent({
       eventId,
@@ -59,6 +90,9 @@ export async function POST(request: NextRequest) {
       universityName,
       teamSize: teamSize || 1,
       teamMembers: teamMembers || [],
+      upiTransactionId,
+      accountHolderName,
+      uploadFileUrl,
     });
 
     return NextResponse.json(

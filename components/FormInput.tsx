@@ -10,6 +10,7 @@ interface FormInputProps {
   placeholder?: string;
   error?: string;
   multiline?: boolean;
+  helpText?: string;
 }
 
 export default function FormInput({
@@ -22,6 +23,7 @@ export default function FormInput({
   placeholder,
   error,
   multiline = false,
+  helpText,
 }: FormInputProps) {
   const inputClasses = `w-full px-4 py-3 rounded-lg glass border ${
     error ? "border-red-500" : "border-red-600/30"
@@ -56,6 +58,10 @@ export default function FormInput({
           placeholder={placeholder}
           className={inputClasses}
         />
+      )}
+
+      {helpText && !error && (
+        <p className="mt-2 text-sm text-white/60">{helpText}</p>
       )}
 
       {error && (
