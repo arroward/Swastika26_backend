@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "swastika-events",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -21,10 +21,12 @@
     "jspdf": "^4.0.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.562.0",
+    "motion": "^12.28.1",
     "next": "16.1.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "webfontloader": "^1.6.28"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

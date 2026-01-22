@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
 export default function SchemaCard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -6,16 +6,16 @@ export default function SchemaCard() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
+
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    
+
     let time = 0;
     let animationFrameId: number;
     const waveData = Array.from({ length: 8 }).map(() => ({
       value: Math.random() * 0.5 + 0.1,
       targetValue: Math.random() * 0.5 + 0.1,
-      speed: Math.random() * 0.02 + 0.01
+      speed: Math.random() * 0.02 + 0.01,
     }));
 
     const resizeCanvas = () => {
@@ -26,7 +26,7 @@ export default function SchemaCard() {
     };
 
     const updateWaveData = () => {
-      waveData.forEach(data => {
+      waveData.forEach((data) => {
         if (Math.random() < 0.01) data.targetValue = Math.random() * 0.7 + 0.1;
         const diff = data.targetValue - data.value;
         data.value += diff * data.speed;
@@ -35,8 +35,8 @@ export default function SchemaCard() {
 
     const draw = () => {
       if (!canvas || !ctx) return;
-      
-      ctx.fillStyle = 'black';
+
+      ctx.fillStyle = "black";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       waveData.forEach((data, i) => {
@@ -45,8 +45,13 @@ export default function SchemaCard() {
         for (let x = 0; x < canvas.width; x++) {
           const nx = (x / canvas.width) * 2 - 1;
           const px = nx + i * 0.04 + freq * 0.03;
-          const py = Math.sin(px * 10 + time) * Math.cos(px * 2) * freq * 0.1 * ((i + 1) / 8);
-          const y = (py + 1) * canvas.height / 2;
+          const py =
+            Math.sin(px * 10 + time) *
+            Math.cos(px * 2) *
+            freq *
+            0.1 *
+            ((i + 1) / 8);
+          const y = ((py + 1) * canvas.height) / 2;
           x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
         const intensity = Math.min(1, freq * 0.3);
@@ -69,12 +74,12 @@ export default function SchemaCard() {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
@@ -89,7 +94,14 @@ export default function SchemaCard() {
               <div className="w-full h-48 rounded-xl gradient-border inner-glow overflow-hidden relative">
                 {/* Animated grid background */}
                 <div className="absolute inset-0 opacity-10">
-                  <div className="w-full h-full animate-pulse" style={{ backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '15px 15px' }} />
+                  <div
+                    className="w-full h-full animate-pulse"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px)",
+                      backgroundSize: "15px 15px",
+                    }}
+                  />
                 </div>
                 {/* SVG connections & floating tables copied here similarly */}
                 {/* ... */}
@@ -97,17 +109,35 @@ export default function SchemaCard() {
             </div>
             <div className="w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
             <div className="p-4">
-              <span className="inline-block px-3 py-1 glass text-indigo-300 rounded-full text-xs font-medium mb-3 border border-indigo-400/30">Database</span>
-              <h3 className="text-lg font-medium text-white mb-2">Schema Management</h3>
+              <span className="inline-block px-3 py-1 glass text-indigo-300 rounded-full text-xs font-medium mb-3 border border-indigo-400/30">
+                Database
+              </span>
+              <h3 className="text-lg font-medium text-white mb-2">
+                Schema Management
+              </h3>
               <p className="text-white/70 mb-4 leading-relaxed text-xs">
-                Design, optimize and maintain your database structure with powerful schema tools.
+                Design, optimize and maintain your database structure with
+                powerful schema tools.
               </p>
               <div className="flex justify-between items-center">
-                <a href="#" className="text-indigo-400 hover:text-indigo-300 transition flex items-center text-xs font-medium glass px-3 py-1.5 rounded-lg border border-indigo-400/30">
+                <a
+                  href="#"
+                  className="text-indigo-400 hover:text-indigo-300 transition flex items-center text-xs font-medium glass px-3 py-1.5 rounded-lg border border-indigo-400/30"
+                >
                   Manage
-                  <svg className="w-3 h-3 ml-1" viewBox="0 0 24 24" fill="none"><path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg className="w-3 h-3 ml-1" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M5 12H19M19 12L12 5M19 12L12 19"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </a>
-                <span className="text-white/50 text-xs glass px-2 py-1 rounded-full border border-white/10">Live</span>
+                <span className="text-white/50 text-xs glass px-2 py-1 rounded-full border border-white/10">
+                  Live
+                </span>
               </div>
             </div>
           </div>
