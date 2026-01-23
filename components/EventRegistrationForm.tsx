@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import FormInput from "./FormInput";
 import { Event } from "@/types/event";
 
@@ -224,12 +225,37 @@ export default function EventRegistrationForm({
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   if (success) {
     return (
-      <div className="card-border rounded-2xl shadow-xl p-8 text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-green-900/30 rounded-full mb-4 border border-green-600/30">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gradient-to-br from-red-900/40 to-black/60 backdrop-blur-xl border border-red-500/30 rounded-3xl p-12 text-center shadow-2xl relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
+        <motion.div
+          animate={{ rotate: 360, scale: [1, 1.1, 1] }}
+          transition={{ duration: 1, delay: 0.2 }}
+          className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-red-600 to-red-800 rounded-full mb-6 border-4 border-red-500/20 shadow-lg shadow-red-600/20"
+        >
           <svg
-            className="w-8 h-8 text-green-400"
+            className="w-10 h-10 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -237,52 +263,94 @@ export default function EventRegistrationForm({
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth="2"
+              strokeWidth="3"
               d="M5 13l4 4L19 7"
             />
           </svg>
-        </div>
-        <h2 className="text-3xl font-bold text-white mb-4">
+        </motion.div>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="text-4xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent mb-4"
+        >
           Registration Successful!
-        </h2>
-        <p className="text-white/80 mb-6">
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-white/80 mb-8 text-lg"
+        >
           You have successfully registered for{" "}
-          <span className="font-semibold">{event.title}</span>
-        </p>
-        <p className="text-sm text-white/60">Redirecting you back to home...</p>
-      </div>
+          <span className="font-semibold text-white">{event.title}</span>
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="text-sm text-white/50 font-medium"
+        >
+          Redirecting you back to home...
+        </motion.div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="card-border rounded-2xl shadow-xl p-8">
-      <h2 className="text-3xl font-bold text-white mb-6">Register for Event</h2>
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="relative bg-gradient-to-br from-red-900/10 to-black/40 backdrop-blur-xl rounded-3xl border border-red-500/10 p-8 md:p-10 shadow-2xl overflow-hidden"
+    >
+      {/* Decorative gradient blob */}
+      <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      {error && (
-        <div className="mb-6 bg-red-900/30 border border-red-600/50 text-red-200 px-4 py-3 rounded-lg flex items-start backdrop-blur-sm">
-          <svg
-            className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5"
-            fill="currentColor"
-            viewBox="0 0 20 20"
+      <motion.div variants={itemVariants} className="mb-10">
+        <h2 className="text-3xl font-black text-white mb-2 tracking-tight">
+          Register for Event
+        </h2>
+        <p className="text-white/50 text-sm">
+          Please fill out the form below to secure your spot.
+        </p>
+      </motion.div>
+
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, height: 0, mb: 0 }}
+            animate={{ opacity: 1, height: "auto", mb: 24 }}
+            exit={{ opacity: 0, height: 0, mb: 0 }}
+            className="bg-red-500/10 border border-red-500/50 text-red-100 px-6 py-4 rounded-xl flex items-start backdrop-blur-md"
           >
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
+            <svg
+              className="w-5 h-5 mr-3 flex-shrink-0 mt-0.5 text-red-400"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <span className="font-medium">{error}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-2">
         <FormInput
           label="Full Name"
           name="fullName"
           value={formData.fullName}
           onChange={handleChange}
           required
-          placeholder="John Doe"
+          placeholder="Enter your full name"
           error={errors.fullName}
         />
 
@@ -293,7 +361,7 @@ export default function EventRegistrationForm({
           value={formData.email}
           onChange={handleChange}
           required
-          placeholder="john.doe@example.com"
+          placeholder="email@example.com"
           error={errors.email}
         />
 
@@ -304,173 +372,213 @@ export default function EventRegistrationForm({
           value={formData.phone}
           onChange={handleChange}
           required
-          placeholder="+1 (555) 123-4567"
+          placeholder="+91 98765 43210"
           error={errors.phone}
         />
 
-        <FormInput
-          label="College Name"
-          name="collegeName"
-          value={formData.collegeName}
-          onChange={handleChange}
-          required
-          placeholder="Your college name"
-          error={errors.collegeName}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormInput
+            label="College Name"
+            name="collegeName"
+            value={formData.collegeName}
+            onChange={handleChange}
+            required
+            placeholder="Your college"
+            error={errors.collegeName}
+          />
 
-        <FormInput
-          label="University Name"
-          name="universityName"
-          value={formData.universityName}
-          onChange={handleChange}
-          required
-          placeholder="Your university name"
-          error={errors.universityName}
-        />
+          <FormInput
+            label="University Name"
+            name="universityName"
+            value={formData.universityName}
+            onChange={handleChange}
+            required
+            placeholder="Your university"
+            error={errors.universityName}
+          />
+        </div>
 
-        <div className="mb-6">
+        <motion.div variants={itemVariants} className="mb-6 pt-4">
           <label
             htmlFor="teamSize"
-            className="block text-red-200 font-semibold mb-2"
+            className="block text-white/80 text-sm font-medium mb-3"
           >
             Number of Team Members
             <span className="text-red-500 ml-1">*</span>
           </label>
-          <input
-            type="number"
-            id="teamSize"
-            name="teamSize"
-            min="1"
-            max="10"
-            value={formData.teamSize}
-            onChange={handleChange}
-            required
-            className="w-full px-4 py-3 rounded-lg glass border border-red-600/30 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-transparent transition-all text-white placeholder-red-300/50"
-          />
-          <p className="mt-1 text-sm text-white/60">Including yourself</p>
-        </div>
-
-        {formData.teamSize > 1 && (
-          <div className="mb-6">
-            <label className="block text-red-200 font-semibold mb-2">
-              Team Member Names (excluding yourself)
-              <span className="text-red-500 ml-1">*</span>
-            </label>
-            <div className="space-y-3">
-              {formData.teamMembers.map((member, index) => (
-                <input
-                  key={index}
-                  type="text"
-                  value={member}
-                  onChange={(e) =>
-                    handleTeamMemberChange(index, e.target.value)
-                  }
-                  placeholder={`Team Member ${index + 1} Name`}
-                  required
-                  className="w-full px-4 py-3 rounded-lg glass border border-red-600/30 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-transparent transition-all text-white placeholder-red-300/50"
-                />
-              ))}
-            </div>
+          <div className="relative group">
+            <input
+              type="number"
+              id="teamSize"
+              name="teamSize"
+              min="1"
+              max="10"
+              value={formData.teamSize}
+              onChange={handleChange}
+              required
+              className="w-full px-5 py-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm transition-all duration-300 text-white placeholder-white/30 outline-none focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10"
+            />
+            <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-gradient-to-r from-red-500 via-white to-red-500 transition-all duration-500 group-focus-within:w-full opacity-0 group-focus-within:opacity-100"></div>
           </div>
-        )}
+          <p className="mt-2 text-xs text-white/40 italic">
+            Including yourself (Leader + Members)
+          </p>
+        </motion.div>
 
-        {/* Payment Section - Only show if event has registration fee */}
+        <AnimatePresence>
+          {formData.teamSize > 1 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-8 pl-4 border-l-2 border-white/5"
+            >
+              <label className="block text-white/90 font-semibold mb-4 text-sm uppercase tracking-wider">
+                Team Member Names
+              </label>
+              <div className="space-y-4">
+                {formData.teamMembers.map((member, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <label className="block text-white/60 text-xs mb-1.5 ml-1">
+                      Member {index + 1}
+                    </label>
+                    <input
+                      type="text"
+                      value={member}
+                      onChange={(e) =>
+                        handleTeamMemberChange(index, e.target.value)
+                      }
+                      placeholder={`Enter name of team member ${index + 1}`}
+                      required
+                      className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm focus:outline-none focus:border-red-500/40 focus:bg-white/10 transition-all text-white placeholder-white/20 text-sm"
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Payment Section */}
         {event.registrationFee && event.registrationFee > 0 && (
-          <div className="mb-6 p-6 bg-blue-900/20 border border-blue-600/30 rounded-lg backdrop-blur-sm">
-            <h3 className="font-semibold text-white mb-4 flex items-center">
-              <svg
-                className="w-5 h-5 mr-2 text-blue-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-              Payment Information
+          <motion.div
+            variants={itemVariants}
+            className="mb-8 mt-8 p-6 bg-gradient-to-br from-red-900/20 to-red-950/30 border border-red-500/20 rounded-2xl backdrop-blur-sm"
+          >
+            <h3 className="font-bold text-white mb-4 flex items-center text-lg">
+              <div className="p-2 bg-red-500/20 rounded-lg mr-3">
+                <svg
+                  className="w-5 h-5 text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </div>
+              Payment Details
             </h3>
-            <div className="mb-4 p-3 bg-blue-600/20 rounded-lg">
-              <p className="text-sm text-blue-200">
-                <span className="font-medium">Registration Fee:</span> ₹
-                {event.registrationFee}
-              </p>
-              <p className="text-xs text-blue-300/70 mt-1">
-                Please complete the payment and enter the transaction details
-                below
+            <div className="mb-6 p-4 bg-black/20 rounded-xl border border-red-500/10">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-white/70 text-sm">Registration Fee</span>
+                <span className="text-xl font-bold text-white">
+                  ₹{event.registrationFee}
+                </span>
+              </div>
+              <p className="text-xs text-white/50">
+                Please complete payment via UPI and enter details below
               </p>
             </div>
 
-            <FormInput
-              label="UPI Transaction ID"
-              name="upiTransactionId"
-              value={formData.upiTransactionId}
-              onChange={handleChange}
-              required
-              placeholder="e.g., 123456789012"
-              error={errors.upiTransactionId}
-              helpText="Enter the UPI transaction/reference ID from your payment"
-            />
+            <div className="space-y-2">
+              <FormInput
+                label="UPI Transaction ID"
+                name="upiTransactionId"
+                value={formData.upiTransactionId}
+                onChange={handleChange}
+                required
+                placeholder="12 digit transaction ID"
+                error={errors.upiTransactionId}
+                helpText="Reference ID from your payment app"
+              />
 
-            <FormInput
-              label="Account Holder Name"
-              name="accountHolderName"
-              value={formData.accountHolderName}
-              onChange={handleChange}
-              required
-              placeholder="Name as per bank account"
-              error={errors.accountHolderName}
-              helpText="Enter the name of the account holder who made the payment"
-            />
-          </div>
+              <FormInput
+                label="Account Holder Name"
+                name="accountHolderName"
+                value={formData.accountHolderName}
+                onChange={handleChange}
+                required
+                placeholder="Name as per bank/UPI"
+                error={errors.accountHolderName}
+                helpText="Name of the person who made the payment"
+              />
+            </div>
+          </motion.div>
         )}
 
-        {/* File Upload Section - Only show for online events */}
+        {/* File Upload Section */}
         {event.isOnline && (
-          <div className="mb-6 p-6 bg-purple-900/20 border border-purple-600/30 rounded-lg backdrop-blur-sm">
-            <h3 className="font-semibold text-white mb-4 flex items-center">
-              <svg
-                className="w-5 h-5 mr-2 text-purple-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                />
-              </svg>
-              Document Upload (Required for Online Events)
+          <motion.div
+            variants={itemVariants}
+            className="mb-8 mt-8 p-6 bg-gradient-to-br from-red-900/20 to-red-950/30 border border-red-500/20 rounded-2xl backdrop-blur-sm"
+          >
+            <h3 className="font-bold text-white mb-4 flex items-center text-lg">
+              <div className="p-2 bg-red-500/20 rounded-lg mr-3">
+                <svg
+                  className="w-5 h-5 text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+              </div>
+              Document Upload
             </h3>
-            <div className="mb-4 p-3 bg-purple-600/20 rounded-lg">
-              <p className="text-xs text-purple-300/70">
-                Please upload your document (PDF, DOC, DOCX, JPG, PNG). Max file
-                size: 10MB
-              </p>
-            </div>
 
-            <div className="mb-4">
+            <div className="mb-6">
               <label
                 htmlFor="fileUpload"
-                className="block text-purple-200 font-semibold mb-2"
+                className="block text-white/80 text-sm font-medium mb-3"
               >
-                Upload File
+                Submission File
                 <span className="text-red-500 ml-1">*</span>
               </label>
-              <input
-                type="file"
-                id="fileUpload"
-                onChange={handleFileChange}
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                className="w-full px-4 py-3 rounded-lg glass border border-purple-600/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-600 file:text-white hover:file:bg-purple-700"
-              />
+
+              <div className="relative group">
+                <input
+                  type="file"
+                  id="fileUpload"
+                  onChange={handleFileChange}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  className="w-full px-5 py-4 rounded-xl bg-black/20 border border-red-500/20 hover:bg-red-900/10 transition-all text-sm text-gray-300
+                    file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 
+                    file:text-sm file:font-semibold file:bg-red-600 file:text-white 
+                    hover:file:bg-red-700 cursor-pointer"
+                />
+              </div>
+
               {uploadedFile && (
-                <div className="mt-2 flex items-center text-green-400 text-sm">
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 flex items-center p-3 bg-red-600/10 rounded-lg border border-red-500/20 text-white text-sm"
+                >
                   <svg
                     className="w-4 h-4 mr-2"
                     fill="none"
@@ -484,14 +592,22 @@ export default function EventRegistrationForm({
                       d="M5 13l4 4L19 7"
                     />
                   </svg>
-                  {uploadedFile.name} (
-                  {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
-                </div>
+                  <span>
+                    {uploadedFile.name}{" "}
+                    <span className="opacity-50 ml-1">
+                      ({(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </span>
+                  </span>
+                </motion.div>
               )}
               {fileError && (
-                <p className="mt-2 text-sm text-red-600 flex items-center">
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-2 text-sm text-red-400 flex items-center font-medium"
+                >
                   <svg
-                    className="w-4 h-4 mr-1"
+                    className="w-4 h-4 mr-1.5"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -502,63 +618,62 @@ export default function EventRegistrationForm({
                     />
                   </svg>
                   {fileError}
-                </p>
+                </motion.p>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
 
-        <div className="bg-red-900/20 border border-red-600/30 rounded-lg p-4 mb-6 backdrop-blur-sm">
-          <h3 className="font-semibold text-white mb-2">Event Details</h3>
-          <div className="space-y-1 text-sm text-white/70">
-            <p>
-              <span className="font-medium">Event:</span> {event.title}
-            </p>
-            <p>
-              <span className="font-medium">Date:</span>{" "}
-              {new Date(event.date).toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
-            <p>
-              <span className="font-medium">Location:</span> {event.location}
-            </p>
-          </div>
-        </div>
+        <motion.div variants={itemVariants} className="pt-6">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full relative overflow-hidden group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center border border-red-500/50 shadow-lg shadow-red-600/20"
+          >
+            {/* Button shine effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shine_1.5s_infinite]"></div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-red-600/80 hover:bg-red-600 backdrop-blur-sm text-white py-4 rounded-lg font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center border border-red-500/50"
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Processing Registration...
+              </>
+            ) : (
+              <span className="flex items-center gap-2">
+                Confirm Registration
+                <svg
+                  className="w-5 h-5 group-hover:translate-x-1 transition-transform"
                   fill="none"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
-              </svg>
-              Submitting...
-            </>
-          ) : (
-            "Complete Registration"
-          )}
-        </button>
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </span>
+            )}
+          </button>
+        </motion.div>
       </form>
-    </div>
+    </motion.div>
   );
 }

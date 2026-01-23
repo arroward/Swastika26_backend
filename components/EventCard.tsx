@@ -41,12 +41,14 @@ export default function EventCard({ event }: EventCardProps) {
         {/* Hover overlay with event details */}
         <div className="absolute inset-0 bg-black/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-8">
           <div className="text-white space-y-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-            <h3 className="text-2xl font-bold">{event.title}</h3>
-            <p className="text-gray-300 text-sm line-clamp-3">
+            <h3 className="text-3xl font-pirata tracking-wide">
+              {event.title}
+            </h3>
+            <p className="text-gray-300 text-sm line-clamp-3 font-light">
               {event.description}
             </p>
             <div className="space-y-2 text-sm">
-              <p className="text-cyan-400 flex items-center gap-2">
+              <p className="text-white-400 flex items-center gap-2">
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -66,7 +68,7 @@ export default function EventCard({ event }: EventCardProps) {
                   year: "numeric",
                 })}
               </p>
-              <p className="text-cyan-400 flex items-center gap-2">
+              <p className="text-white-400 flex items-center gap-2">
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -88,7 +90,7 @@ export default function EventCard({ event }: EventCardProps) {
                 </svg>
                 {event.location}
               </p>
-              <p className="text-cyan-400 flex items-center gap-2">
+              <p className="text-white-400 flex items-center gap-2">
                 {event.registrationFee && event.registrationFee > 0 ? (
                   <>
                     <svg
@@ -131,7 +133,7 @@ export default function EventCard({ event }: EventCardProps) {
                 e.preventDefault();
                 window.location.href = `/${event.id}/register`;
               }}
-              className="mt-4 w-full bg-cyan-500 hover:bg-cyan-400 text-black font-bold py-3 px-6 rounded-lg transition-colors duration-200"
+              className="mt-4 w-full bg-white hover:bg-white-400 text-black font-pirata font-extrabold py-3 px-6 rounded-lg transition-colors duration-200 tracking-wide"
             >
               Register Now
             </button>

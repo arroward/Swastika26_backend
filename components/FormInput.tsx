@@ -1,3 +1,7 @@
+"use client";
+
+import { motion } from "framer-motion";
+
 interface FormInputProps {
   label: string;
   name: string;
@@ -25,57 +29,88 @@ export default function FormInput({
   multiline = false,
   helpText,
 }: FormInputProps) {
-  const inputClasses = `w-full px-4 py-3 rounded-lg glass border ${
-    error ? "border-red-500" : "border-red-600/30"
-  } focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-transparent transition-all text-white placeholder-red-300/50`;
-
   return (
-    <div className="mb-6">
-      <label htmlFor={name} className="block text-red-200 font-semibold mb-2">
+    <motion.div
+      className="mb-6 group"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <label
+        htmlFor={name}
+        className="block text-white/80 text-sm font-medium mb-2 group-focus-within:text-red-400 transition-colors duration-300"
+      >
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
 
-      {multiline ? (
-        <textarea
-          id={name}
-          name={name}
-          value={value}
-          onChange={onChange}
-          required={required}
-          placeholder={placeholder}
-          rows={4}
-          className={inputClasses}
-        />
-      ) : (
-        <input
-          id={name}
-          name={name}
-          type={type}
-          value={value}
-          onChange={onChange}
-          required={required}
-          placeholder={placeholder}
-          className={inputClasses}
-        />
-      )}
+      <div className="relative">
+        {multiline ? (
+          <textarea
+            id={name}
+            name={name}
+            value={value}
+            onChange={onChange}
+            required={required}
+            placeholder={placeholder}
+            rows={4}
+            className={`w-full px-5 py-4 rounded-xl bg-white/5 border backdrop-blur-sm transition-all duration-300
+              text-white placeholder-white/30 outline-none
+              ${
+                error
+                  ? "border-red-500/80 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  : "border-white/10 hover:border-white/20 focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10"
+              }`}
+          />
+        ) : (
+          <input
+            id={name}
+            name={name}
+            type={type}
+            value={value}
+            onChange={onChange}
+            required={required}
+            placeholder={placeholder}
+            className={`w-full px-5 py-4 rounded-xl bg-white/5 border backdrop-blur-sm transition-all duration-300
+              text-white placeholder-white/30 outline-none
+              ${
+                error
+                  ? "border-red-500/80 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
+                  : "border-white/10 hover:border-white/20 focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10"
+              }`}
+          />
+        )}
+
+        {/* Animated bottom border/glow */}
+        <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-gradient-to-r from-red-500 via-white to-red-500 transition-all duration-500 group-focus-within:w-full opacity-0 group-focus-within:opacity-100"></div>
+      </div>
 
       {helpText && !error && (
-        <p className="mt-2 text-sm text-white/60">{helpText}</p>
+        <p className="mt-2 text-xs text-white/40 italic">{helpText}</p>
       )}
 
       {error && (
-        <p className="mt-2 text-sm text-red-600 flex items-center">
-          <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+        <motion.p
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="mt-2 text-sm text-red-500/90 font-medium flex items-center"
+        >
+          <svg
+            className="w-4 h-4 mr-1.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
           {error}
-        </p>
+        </motion.p>
       )}
-    </div>
+    </motion.div>
   );
 }

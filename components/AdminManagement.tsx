@@ -316,45 +316,113 @@ export default function AdminManagement({
           </button>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Assigned Events
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-              {admins.map((admin) => (
-                <tr key={admin.id} className="hover:bg-gray-750">
-                  <td className="px-6 py-4 text-sm text-gray-200">
-                    {admin.name}
-                    {admin.id === currentAdminId && (
-                      <span className="ml-2 text-xs text-blue-400">(You)</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-200">
-                    {admin.email}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
+        <div className="space-y-4">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                    Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                    Assigned Events
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {admins.map((admin) => (
+                  <tr key={admin.id} className="hover:bg-gray-750">
+                    <td className="px-6 py-4 text-sm text-gray-200">
+                      {admin.name}
+                      {admin.id === currentAdminId && (
+                        <span className="ml-2 text-xs text-blue-400">
+                          (You)
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-200">
+                      {admin.email}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          admin.role === "superadmin"
+                            ? "bg-purple-900 text-purple-200"
+                            : "bg-green-900 text-green-200"
+                        }`}
+                      >
+                        {admin.role === "superadmin"
+                          ? "Super Admin"
+                          : "Event Coordinator"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <AssignedEventsCell
+                        adminId={admin.id}
+                        role={admin.role}
+                      />
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-400">
+                      {new Date(admin.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        onClick={() => handleEdit(admin)}
+                        className="text-blue-400 hover:text-blue-300 mr-4"
+                        disabled={loading}
+                      >
+                        Edit
+                      </button>
+                      {admin.id !== currentAdminId && (
+                        <button
+                          onClick={() => handleDelete(admin.id, admin.name)}
+                          className="text-red-400 hover:text-red-300"
+                          disabled={loading}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {admins.map((admin) => (
+              <div key={admin.id} className="bg-gray-700 rounded-lg p-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-200">
+                        {admin.name}
+                        {admin.id === currentAdminId && (
+                          <span className="ml-2 text-xs text-blue-400">
+                            (You)
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {admin.email}
+                      </p>
+                    </div>
                     <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
+                      className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
                         admin.role === "superadmin"
                           ? "bg-purple-900 text-purple-200"
                           : "bg-green-900 text-green-200"
@@ -364,35 +432,47 @@ export default function AdminManagement({
                         ? "Super Admin"
                         : "Event Coordinator"}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <AssignedEventsCell adminId={admin.id} role={admin.role} />
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-400">
-                    {new Date(admin.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <button
-                      onClick={() => handleEdit(admin)}
-                      className="text-blue-400 hover:text-blue-300 mr-4"
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    {admin.id !== currentAdminId && (
+                  </div>
+
+                  <div className="border-t border-gray-600 pt-2">
+                    <p className="text-xs text-gray-400 mb-1">
+                      Assigned Events
+                    </p>
+                    <p className="text-xs text-gray-300">
+                      <AssignedEventsCell
+                        adminId={admin.id}
+                        role={admin.role}
+                      />
+                    </p>
+                  </div>
+
+                  <div className="border-t border-gray-600 pt-2 flex justify-between items-center">
+                    <p className="text-xs text-gray-400">
+                      {new Date(admin.createdAt).toLocaleDateString()}
+                    </p>
+                    <div className="flex gap-3">
                       <button
-                        onClick={() => handleDelete(admin.id, admin.name)}
-                        className="text-red-400 hover:text-red-300"
+                        onClick={() => handleEdit(admin)}
+                        className="text-blue-400 hover:text-blue-300 text-sm"
                         disabled={loading}
                       >
-                        Delete
+                        Edit
                       </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      {admin.id !== currentAdminId && (
+                        <button
+                          onClick={() => handleDelete(admin.id, admin.name)}
+                          className="text-red-400 hover:text-red-300 text-sm"
+                          disabled={loading}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
