@@ -221,7 +221,8 @@ export default function EventRegistrationsList({
                 {registration.accountHolderName || "-"}
               </td>
               <td className="py-3 px-4 text-gray-300">
-                {registration.uploadFileUrl ? (
+                {registration.uploadFileUrl &&
+                registration.uploadFileUrl.length > 0 ? (
                   <div className="flex items-center gap-2">
                     <button
                       className="text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer transition-colors text-sm"
@@ -230,7 +231,7 @@ export default function EventRegistrationsList({
 
                         try {
                           // Use the download API route to fetch the file
-                          const downloadUrl = `/api/admin/download-file?url=${encodeURIComponent(registration.uploadFileUrl)}`;
+                          const downloadUrl = `/api/admin/download-file?url=${encodeURIComponent(registration.uploadFileUrl || "")}`;
                           // Open in new tab for viewing
                           window.open(downloadUrl, "_blank");
                         } catch (error) {
@@ -250,7 +251,7 @@ export default function EventRegistrationsList({
 
                         try {
                           // Use API route to download file (handles R2 access and CORS)
-                          const downloadUrl = `/api/admin/download-file?url=${encodeURIComponent(registration.uploadFileUrl)}`;
+                          const downloadUrl = `/api/admin/download-file?url=${encodeURIComponent(registration.uploadFileUrl || "")}`;
                           const response = await fetch(downloadUrl);
 
                           if (response.ok) {
@@ -261,7 +262,7 @@ export default function EventRegistrationsList({
 
                             // Get file extension from URL or use default
                             const extension =
-                              registration.uploadFileUrl
+                              (registration.uploadFileUrl || "")
                                 .split(".")
                                 .pop()
                                 ?.split("?")[0] || "file";

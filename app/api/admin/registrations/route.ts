@@ -5,9 +5,9 @@ import {
   getCoordinatorRegistrations,
   getAdminManagedEvents,
   getAdminByEmail,
+  sql,
 } from "@/lib/db";
 import { cookies } from "next/headers";
-import { sql } from "@vercel/postgres";
 
 // Helper to get admin from session
 async function getAdminFromSession(request: NextRequest) {
