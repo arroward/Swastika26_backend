@@ -67,10 +67,22 @@ export async function uploadToR2(
 
     await r2Client.send(command);
 
-    // Return public URL
-    const publicUrl = R2_PUBLIC_URL
-      ? `${R2_PUBLIC_URL}/${fileName}`
-      : `https://${R2_BUCKET_NAME}.r2.cloudflarestorage.com/${fileName}`;
+    // Generate URLs - try custom domain first, with fallback to direct R2
+    let publicUrl: string;
+
+    if (R2_PUBLIC_URL) {
+      publicUrl = `${R2_PUBLIC_URL}/${fileName}`;
+    } else {
+      // Default to direct R2 URL
+      publicUrl = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${fileName}`;
+    }
+
+    console.log("File uploaded successfully to R2:", {
+      fileName,
+      publicUrl,
+      hasCustomDomain: !!R2_PUBLIC_URL,
+      directR2Url: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${fileName}`,
+    });
 
     return publicUrl;
   } catch (error) {
@@ -109,10 +121,15 @@ export async function uploadBase64ToR2(
 
     await r2Client.send(command);
 
-    // Return public URL
-    const publicUrl = R2_PUBLIC_URL
-      ? `${R2_PUBLIC_URL}/${newFileName}`
-      : `https://${R2_BUCKET_NAME}.r2.cloudflarestorage.com/${newFileName}`;
+    // Generate URLs - try custom domain first, with fallback to direct R2
+    let publicUrl: string;
+
+    if (R2_PUBLIC_URL) {
+      publicUrl = `${R2_PUBLIC_URL}/${newFileName}`;
+    } else {
+      // Default to direct R2 URL
+      publicUrl = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${newFileName}`;
+    }
 
     return publicUrl;
   } catch (error) {

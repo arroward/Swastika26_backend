@@ -11,6 +11,9 @@ interface Registration {
   universityName?: string;
   teamSize?: number;
   teamMembers?: string[];
+  upiTransactionId?: string;
+  accountHolderName?: string;
+  uploadFileUrl?: string;
   registrationDate: string;
 }
 
@@ -174,6 +177,15 @@ export default function EventRegistrationsList({
             </th>
             <th className="py-3 px-4 text-gray-300 font-semibold">Team Size</th>
             <th className="py-3 px-4 text-gray-300 font-semibold">
+              UPI Transaction ID
+            </th>
+            <th className="py-3 px-4 text-gray-300 font-semibold">
+              Account Holder
+            </th>
+            <th className="py-3 px-4 text-gray-300 font-semibold">
+              Uploaded File
+            </th>
+            <th className="py-3 px-4 text-gray-300 font-semibold">
               Registered On
             </th>
           </tr>
@@ -195,6 +207,87 @@ export default function EventRegistrationsList({
               </td>
               <td className="py-3 px-4 text-gray-300">
                 {registration.teamSize || 1}
+              </td>
+              <td className="py-3 px-4 text-gray-300">
+                {registration.upiTransactionId ? (
+                  <span className="font-mono text-sm bg-green-900/30 px-2 py-1 rounded border border-green-600/30">
+                    {registration.upiTransactionId}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">-</span>
+                )}
+              </td>
+              <td className="py-3 px-4 text-gray-300">
+                {registration.accountHolderName || "-"}
+              </td>
+              <td className="py-3 px-4 text-gray-300">
+                {registration.uploadFileUrl ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer transition-colors text-sm"
+                      onClick={async (e) => {
+                        e.preventDefault();
+
+                        try {
+                          // Use the download API route to fetch the file
+                          const downloadUrl = `/api/admin/download-file?url=${encodeURIComponent(registration.uploadFileUrl)}`;
+                          // Open in new tab for viewing
+                          window.open(downloadUrl, "_blank");
+                        } catch (error) {
+                          console.error("View error:", error);
+                          alert(
+                            "Failed to open file. Please check if the file exists.",
+                          );
+                        }
+                      }}
+                    >
+                      View
+                    </button>
+                    <button
+                      className="text-green-400 hover:text-green-300 flex items-center gap-1 cursor-pointer transition-colors text-sm"
+                      onClick={async (e) => {
+                        e.preventDefault();
+
+                        try {
+                          // Use API route to download file (handles R2 access and CORS)
+                          const downloadUrl = `/api/admin/download-file?url=${encodeURIComponent(registration.uploadFileUrl)}`;
+                          const response = await fetch(downloadUrl);
+
+                          if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement("a");
+                            link.href = url;
+
+                            // Get file extension from URL or use default
+                            const extension =
+                              registration.uploadFileUrl
+                                .split(".")
+                                .pop()
+                                ?.split("?")[0] || "file";
+                            link.download = `payment_proof_${registration.fullName.replace(/\s+/g, "_")}.${extension}`;
+
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                          } else {
+                            alert("Failed to download file. Please try again.");
+                          }
+                        } catch (error) {
+                          console.error("Download error:", error);
+                          alert(
+                            "Failed to download file. Please check if the file exists.",
+                          );
+                        }
+                      }}
+                    >
+                      Download
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-gray-500">-</span>
+                )}
               </td>
               <td className="py-3 px-4 text-gray-400">
                 {new Date(registration.registrationDate).toLocaleDateString()}

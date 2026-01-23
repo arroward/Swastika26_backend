@@ -340,6 +340,7 @@ export async function getRegistrationsByEvent(eventId: string) {
         team_members as "teamMembers",
         upi_transaction_id as "upiTransactionId",
         account_holder_name as "accountHolderName",
+        upload_file_url as "uploadFileUrl",
         registration_date as "registrationDate"
       FROM event_registrations
       WHERE event_id = ${eventId}

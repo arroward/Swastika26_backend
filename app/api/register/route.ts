@@ -69,8 +69,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      console.log("Uploading file to R2:", {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      });
+
       try {
         uploadFileUrl = await uploadToR2(file, "event-registrations");
+        console.log("File uploaded successfully, URL:", uploadFileUrl);
       } catch (uploadError) {
         console.error("File upload error:", uploadError);
         return NextResponse.json(

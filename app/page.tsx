@@ -10,7 +10,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen relative bg-black">
       <Navbar />
-      <div className="fixed inset-0 z-0">
+      <div className="fixed inset-0 z-0 w-screen h-screen">
         <LightRays
           raysOrigin="top-center"
           raysColor="#ffffff"
@@ -21,7 +21,7 @@ export default async function Home() {
           mouseInfluence={0.1}
           noiseAmount={0}
           distortion={0}
-          className="custom-rays"
+          className="w-full h-full"
           pulsating={false}
           fadeDistance={1}
           saturation={1}

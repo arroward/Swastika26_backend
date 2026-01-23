@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getAllRegistrations,
   getRegistrationsByEvent,
+  getCoordinatorRegistrations,
   getAdminManagedEvents,
   getAdminByEmail,
 } from "@/lib/db";
 import { cookies } from "next/headers";
+import { sql } from "@vercel/postgres";
 
 // Helper to get admin from session
 async function getAdminFromSession(request: NextRequest) {
@@ -47,14 +49,40 @@ export async function GET(request: NextRequest) {
     }
 
     // Event coordinator gets registrations for their events
-    if (role === "event_coordinator" && eventId) {
-      console.log("Fetching registrations for event:", eventId);
-      const registrations = await getRegistrationsByEvent(eventId);
-      console.log("Found registrations:", registrations.length);
-      return NextResponse.json({
-        success: true,
-        data: registrations,
-      });
+    if (role === "event_coordinator") {
+      // If eventId is specified, verify coordinator owns this event
+      if (eventId) {
+        console.log("Fetching registrations for event:", eventId);
+
+        // Verify that coordinator owns this event
+        const eventOwnership = await sql`
+          SELECT COUNT(*) as count FROM admin_events 
+          WHERE admin_id = ${adminId} AND event_id = ${eventId}
+        `;
+
+        if (eventOwnership[0].count === 0) {
+          console.log("Coordinator does not own this event");
+          return NextResponse.json({ error: "Access denied" }, { status: 403 });
+        }
+
+        const registrations = await getRegistrationsByEvent(eventId);
+        console.log("Found registrations:", registrations.length);
+        return NextResponse.json({
+          success: true,
+          data: registrations,
+        });
+      } else {
+        // Get all registrations for coordinator's events
+        const registrations = await getCoordinatorRegistrations(adminId);
+        console.log(
+          "Found registrations for coordinator:",
+          registrations.length,
+        );
+        return NextResponse.json({
+          success: true,
+          data: registrations,
+        });
+      }
     }
 
     console.log("Invalid request - missing role or eventId");

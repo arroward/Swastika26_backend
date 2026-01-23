@@ -180,7 +180,13 @@
   }
   body {
     @apply text-foreground;
-    background: #000000;
+    background: linear-gradient(
+      135deg,
+      #8b1c1c 0%,
+      #4a0e0e 25%,
+      #2a0505 50%,
+      #000000 100%
+    );
     min-height: 100vh;
   }
 }
