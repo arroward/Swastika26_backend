@@ -41,11 +41,11 @@ export default function AdminNotifications() {
         {
             name: "About Swastika 🚀",
             title: "Experience Swastika'26! 🔥",
-            body: "The National Level Techno-Cultural Fest of MBCET. A high-octane celebration of technology, creativity, and culture! 🌟"
+            body: "The National Level Techno-Cultural Fest of MBCCET. A high-octane celebration of technology, creativity, and culture! 🌟"
         },
         {
             name: "About MBCET 🏫",
-            title: "Welcome to MBCET 🌿",
+            title: "Welcome to MBCCET 🌿",
             body: "Mar Baselios Christian College of Engineering & Technology, Peermade. Quality engineering education in a serene hill-station campus. 🎓"
         },
         {
