@@ -60,12 +60,21 @@ export async function POST(request: Request) {
                 },
                 webpush: {
                     notification: {
+                        title,
+                        body,
                         icon: '/logo/wh_sw.png',
                         image: imageUrl || undefined,
+                    },
+                    fcmOptions: {
+                        link: '/'
                     }
                 },
                 data: {
                     url: '/',
+                    click_action: '/',
+                    link: '/',
+                    title,
+                    body,
                 },
                 tokens: chunkTokens,
             };
