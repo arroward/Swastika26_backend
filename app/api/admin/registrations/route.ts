@@ -19,8 +19,7 @@ async function getAdminFromSession(request: NextRequest) {
       return null;
     }
 
-    const session = JSON.parse(sessionCookie.value);
-    return session.id;
+    return JSON.parse(sessionCookie.value);
   } catch (error) {
     console.error("Error parsing session:", error);
     return null;
@@ -29,18 +28,21 @@ async function getAdminFromSession(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const adminId = await getAdminFromSession(request);
+    const session = await getAdminFromSession(request);
 
-    console.log("Admin session:", adminId);
+    console.log("Admin session:", session?.id);
 
-    if (!adminId) {
+    if (!session || !session.id) {
       console.log("No admin session found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
-    const role = searchParams.get("role");
+
+    // Get role and id from session
+    const role = session.role;
+    const adminId = session.id;
 
     console.log("Request params:", { eventId, role });
 
@@ -90,10 +92,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log("Invalid request - missing role or eventId");
+    console.log("Invalid request - unknown role");
     return NextResponse.json(
-      { error: "Invalid request parameters" },
-      { status: 400 },
+      { error: "Forbidden: Invalid role" },
+      { status: 403 },
     );
   } catch (error) {
     console.error("Error fetching registrations:", error);
