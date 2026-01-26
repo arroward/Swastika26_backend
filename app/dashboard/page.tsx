@@ -11,6 +11,7 @@ import NotificationManagement from "@/components/NotificationManagement";
 import EventRegistrationsList from "@/components/EventRegistrationsList";
 import { Event } from "@/types/event";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import LoggerPage from "@/app/admin/logger/page";
 
 interface AdminInfo {
   id: string;
@@ -29,7 +30,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "registrations" | "admins" | "events" | "notifications"
+    "registrations" | "admins" | "events" | "notifications" | "logger"
   >("registrations");
 
   // Load admin info from localStorage
@@ -229,22 +230,20 @@ export default function AdminDashboard() {
             <div className="flex gap-4 border-b border-gray-700">
               <button
                 onClick={() => setActiveTab("registrations")}
-                className={`pb-4 px-4 font-semibold transition ${
-                  activeTab === "registrations"
+                className={`pb-4 px-4 font-semibold transition ${activeTab === "registrations"
                     ? "text-blue-400 border-b-2 border-blue-400"
                     : "text-gray-400 hover:text-gray-300"
-                }`}
+                  }`}
               >
                 Registrations{" "}
                 {registrations.length > 0 && `(${registrations.length})`}
               </button>
               <button
                 onClick={() => setActiveTab("events")}
-                className={`pb-4 px-4 font-semibold transition ${
-                  activeTab === "events"
+                className={`pb-4 px-4 font-semibold transition ${activeTab === "events"
                     ? "text-blue-400 border-b-2 border-blue-400"
                     : "text-gray-400 hover:text-gray-300"
-                }`}
+                  }`}
               >
                 Events
               </button>
@@ -253,23 +252,30 @@ export default function AdminDashboard() {
                   setActiveTab("admins");
                   fetchAdmins();
                 }}
-                className={`pb-4 px-4 font-semibold transition ${
-                  activeTab === "admins"
+                className={`pb-4 px-4 font-semibold transition ${activeTab === "admins"
                     ? "text-blue-400 border-b-2 border-blue-400"
                     : "text-gray-400 hover:text-gray-300"
-                }`}
+                  }`}
               >
                 Manage Admins
               </button>
               <button
                 onClick={() => setActiveTab("notifications")}
-                className={`pb-4 px-4 font-semibold transition ${
-                  activeTab === "notifications"
+                className={`pb-4 px-4 font-semibold transition ${activeTab === "notifications"
                     ? "text-blue-400 border-b-2 border-blue-400"
                     : "text-gray-400 hover:text-gray-300"
-                }`}
+                  }`}
               >
                 Notifications
+              </button>
+              <button
+                onClick={() => setActiveTab("logger")}
+                className={`pb-4 px-4 font-semibold transition ${activeTab === "logger"
+                    ? "text-blue-400 border-b-2 border-blue-400"
+                    : "text-gray-400 hover:text-gray-300"
+                  }`}
+              >
+                Logger
               </button>
             </div>
 
@@ -318,6 +324,14 @@ export default function AdminDashboard() {
 
             {/* Notifications Tab */}
             {activeTab === "notifications" && <NotificationManagement />}
+
+            {/* Logger Tab */}
+            {activeTab === "logger" && (
+              <div className="-m-8">
+                {/* Negative margin to counteract dashboard padding since LoggerPage has its own layout */}
+                <LoggerPage />
+              </div>
+            )}
           </div>
         )}
 
