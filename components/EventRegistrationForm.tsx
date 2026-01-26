@@ -322,9 +322,9 @@ export default function EventRegistrationForm({
       <AnimatePresence>
         {error && (
           <motion.div
-            initial={{ opacity: 0, height: 0, mb: 0 }}
-            animate={{ opacity: 1, height: "auto", mb: 24 }}
-            exit={{ opacity: 0, height: 0, mb: 0 }}
+            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
+            animate={{ opacity: 1, height: "auto", marginBottom: 24 }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
             className="bg-red-500/10 border border-red-500/50 text-red-100 px-6 py-4 rounded-xl flex items-start backdrop-blur-md"
           >
             <svg
