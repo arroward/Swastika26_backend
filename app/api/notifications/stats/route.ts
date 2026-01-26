@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminFirestore } from '@/lib/firebase-admin';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         if (!adminFirestore) {
@@ -8,8 +10,9 @@ export async function GET() {
         }
 
         // 1. Fetch Subscriber Stats
-        const tokensSnapshot = await adminFirestore.collection('fcm_tokens').get();
-        const subscriberCount = tokensSnapshot.size;
+        // Use count() for efficient counting without fetching all documents
+        const countSnapshot = await adminFirestore.collection('fcm_tokens').count().get();
+        const subscriberCount = countSnapshot.data().count;
 
         // Get most recent subscriber separately
         const lastTokenQuery = await adminFirestore.collection('fcm_tokens').orderBy('createdAt', 'desc').limit(1).get();

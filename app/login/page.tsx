@@ -14,7 +14,7 @@ export default function AdminLoginPage() {
     // Check if already logged in
     const admin = localStorage.getItem("admin");
     if (admin) {
-      router.push("/admin/dashboard");
+      router.push("/dashboard");
     }
   }, [router]);
 
@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
       localStorage.setItem("admin", JSON.stringify(data.admin));
 
       // Redirect to dashboard
-      router.push("/admin/dashboard");
+      router.push("/dashboard");
     } catch (error) {
       throw error;
     } finally {

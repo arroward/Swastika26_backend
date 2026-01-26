@@ -7,6 +7,7 @@ import EventSelect from "@/components/EventSelect";
 import RegistrationsTable from "@/components/RegistrationsTable";
 import AdminManagement from "@/components/AdminManagement";
 import EventManagement from "@/components/EventManagement";
+import NotificationManagement from "@/components/NotificationManagement";
 import EventRegistrationsList from "@/components/EventRegistrationsList";
 import { Event } from "@/types/event";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "registrations" | "admins" | "events"
+    "registrations" | "admins" | "events" | "notifications"
   >("registrations");
 
   // Load admin info from localStorage
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
         // Check localStorage first for quick loading
         const adminData = localStorage.getItem("admin");
         if (!adminData) {
-          router.push("/admin/login");
+          router.push("/login");
           return;
         }
 
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
         if (!data.authenticated) {
           // Session expired or invalid, clear localStorage and redirect
           localStorage.removeItem("admin");
-          router.push("/admin/login");
+          router.push("/login");
           return;
         }
 
@@ -62,7 +63,7 @@ export default function AdminDashboard() {
       } catch (error) {
         console.error("Session verification error:", error);
         localStorage.removeItem("admin");
-        router.push("/admin/login");
+        router.push("/login");
       }
     };
 
@@ -179,7 +180,7 @@ export default function AdminDashboard() {
     try {
       await fetch("/api/admin/logout", { method: "POST" });
       localStorage.removeItem("admin");
-      router.push("/admin/login");
+      router.push("/login");
     } catch (error) {
       console.error("Error logging out:", error);
     }
@@ -260,6 +261,16 @@ export default function AdminDashboard() {
               >
                 Manage Admins
               </button>
+              <button
+                onClick={() => setActiveTab("notifications")}
+                className={`pb-4 px-4 font-semibold transition ${
+                  activeTab === "notifications"
+                    ? "text-blue-400 border-b-2 border-blue-400"
+                    : "text-gray-400 hover:text-gray-300"
+                }`}
+              >
+                Notifications
+              </button>
             </div>
 
             {/* Registrations Tab */}
@@ -304,6 +315,9 @@ export default function AdminDashboard() {
                 onUpdate={fetchAdmins}
               />
             )}
+
+            {/* Notifications Tab */}
+            {activeTab === "notifications" && <NotificationManagement />}
           </div>
         )}
 
