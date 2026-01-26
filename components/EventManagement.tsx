@@ -42,7 +42,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
     try {
       const response = await fetch("/api/events");
       const data = await response.json();
-      setEvents(data);
+      setEvents(data.data || []);
     } catch (error) {
       console.error("Error fetching events:", error);
     }

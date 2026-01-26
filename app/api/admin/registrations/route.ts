@@ -11,15 +11,20 @@ import { cookies } from "next/headers";
 
 // Helper to get admin from session
 async function getAdminFromSession(request: NextRequest) {
-  const cookieStore = await cookies();
-  const adminId = cookieStore.get("admin_session")?.value;
+  try {
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get("admin_session");
 
-  if (!adminId) {
+    if (!sessionCookie) {
+      return null;
+    }
+
+    const session = JSON.parse(sessionCookie.value);
+    return session.id;
+  } catch (error) {
+    console.error("Error parsing session:", error);
     return null;
   }
-
-  // In production, validate JWT token and get admin details
-  return adminId;
 }
 
 export async function GET(request: NextRequest) {
@@ -60,7 +65,7 @@ export async function GET(request: NextRequest) {
           WHERE admin_id = ${adminId} AND event_id = ${eventId}
         `;
 
-        if (eventOwnership[0].count === 0) {
+        if (Number(eventOwnership[0].count) === 0) {
           console.log("Coordinator does not own this event");
           return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
