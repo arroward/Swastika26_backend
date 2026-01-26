@@ -1,18 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  location: string;
-  imageUrl: string;
-  category: string;
-  capacity: number;
-  registeredCount: number;
-}
+import { useEffect, useState } from "react";
+import { Event } from "@/types/event";
 
 interface EventManagementProps {
   onUpdate: () => void;
@@ -30,6 +19,23 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
     imageUrl: "",
     category: "",
     capacity: 100,
+    registrationFee: 0,
+    isOnline: false,
+    rules: "[]",
+    priceAmount: 0,
+  });
+  const [fieldErrors, setFieldErrors] = useState({
+    title: "",
+    description: "",
+    date: "",
+    location: "",
+    imageUrl: "",
+    category: "",
+    capacity: "",
+    registrationFee: "",
+    isOnline: "",
+    rules: "",
+    priceAmount: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +46,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch("/api/events");
+      const response = await fetch("/api/admin/events?role=superadmin");
       const data = await response.json();
       setEvents(data.data || []);
     } catch (error) {
@@ -59,6 +65,23 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
       imageUrl: "",
       category: "",
       capacity: 100,
+      registrationFee: 0,
+      isOnline: false,
+      rules: "[]",
+      priceAmount: 0,
+    });
+    setFieldErrors({
+      title: "",
+      description: "",
+      date: "",
+      location: "",
+      imageUrl: "",
+      category: "",
+      capacity: "",
+      registrationFee: "",
+      isOnline: "",
+      rules: "",
+      priceAmount: "",
     });
     setError("");
   };
@@ -69,11 +92,28 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
     setFormData({
       title: event.title,
       description: event.description,
-      date: event.date.split("T")[0], // Format date for input
+      date: event.date.split("T")[0],
       location: event.location,
       imageUrl: event.imageUrl,
       category: event.category,
       capacity: event.capacity,
+      registrationFee: event.registrationFee || 0,
+      isOnline: event.isOnline || false,
+      rules: JSON.stringify(event.rules || []),
+      priceAmount: event.priceAmount || 0,
+    });
+    setFieldErrors({
+      title: "",
+      description: "",
+      date: "",
+      location: "",
+      imageUrl: "",
+      category: "",
+      capacity: "",
+      registrationFee: "",
+      isOnline: "",
+      rules: "",
+      priceAmount: "",
     });
     setError("");
   };
@@ -89,22 +129,108 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
       imageUrl: "",
       category: "",
       capacity: 100,
+      registrationFee: 0,
+      isOnline: false,
+      rules: "[]",
+      priceAmount: 0,
+    });
+    setFieldErrors({
+      title: "",
+      description: "",
+      date: "",
+      location: "",
+      imageUrl: "",
+      category: "",
+      capacity: "",
+      registrationFee: "",
+      isOnline: "",
+      rules: "",
+      priceAmount: "",
     });
     setError("");
   };
 
+  const validateForm = () => {
+    const errors = {
+      title: "",
+      description: "",
+      date: "",
+      location: "",
+      imageUrl: "",
+      category: "",
+      capacity: "",
+      registrationFee: "",
+      isOnline: "",
+      rules: "",
+      priceAmount: "",
+    };
+
+    if (!formData.title.trim()) errors.title = "Title is required";
+    if (!formData.description.trim())
+      errors.description = "Description is required";
+    if (!formData.date) errors.date = "Date is required";
+    if (!formData.location.trim()) errors.location = "Location is required";
+    if (!formData.imageUrl.trim()) errors.imageUrl = "Image URL is required";
+    if (!formData.category) errors.category = "Category is required";
+
+    if (!Number.isFinite(formData.capacity) || formData.capacity < 1) {
+      errors.capacity = "Capacity must be at least 1";
+    }
+
+    if (
+      !Number.isFinite(formData.registrationFee) ||
+      formData.registrationFee < 0
+    ) {
+      errors.registrationFee = "Fee must be 0 or more";
+    }
+
+    if (!Number.isFinite(formData.priceAmount) || formData.priceAmount < 0) {
+      errors.priceAmount = "Price amount must be 0 or more";
+    }
+
+    try {
+      const parsedRules = JSON.parse(formData.rules || "[]");
+      if (!Array.isArray(parsedRules)) {
+        errors.rules = "Rules must be a JSON array";
+      }
+    } catch {
+      errors.rules = "Rules must be valid JSON";
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (formData.date) {
+      const selectedDate = new Date(formData.date);
+      if (selectedDate < today) {
+        errors.date = "Date cannot be in the past";
+      }
+    }
+
+    setFieldErrors(errors);
+    return !Object.values(errors).some((value) => value !== "");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
     setLoading(true);
     setError("");
 
     try {
       if (isCreating) {
-        // Create new event
-        const response = await fetch("/api/events", {
+        const parsedRules = JSON.parse(formData.rules || "[]");
+        const response = await fetch("/api/admin/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            capacity: Number(formData.capacity),
+            registrationFee: Number(formData.registrationFee),
+            priceAmount: Number(formData.priceAmount),
+            rules: parsedRules,
+          }),
         });
 
         const data = await response.json();
@@ -113,11 +239,17 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
           throw new Error(data.error || "Failed to create event");
         }
       } else if (editingEvent) {
-        // Update existing event
-        const response = await fetch(`/api/events/${editingEvent.id}`, {
-          method: "PUT",
+        const parsedRules = JSON.parse(formData.rules || "[]");
+        const response = await fetch(`/api/admin/events/${editingEvent.id}`, {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            ...formData,
+            capacity: Number(formData.capacity),
+            registrationFee: Number(formData.registrationFee),
+            priceAmount: Number(formData.priceAmount),
+            rules: parsedRules,
+          }),
         });
 
         const data = await response.json();
@@ -128,7 +260,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
       }
 
       handleCancel();
-      fetchEvents();
+      await fetchEvents();
       onUpdate();
     } catch (err: any) {
       setError(err.message);
@@ -140,7 +272,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
   const handleDelete = async (eventId: string, eventTitle: string) => {
     if (
       !confirm(
-        `Are you sure you want to delete the event "${eventTitle}"? This will also delete all registrations for this event.`,
+        `Are you sure you want to delete event "${eventTitle}"? This action cannot be undone.`,
       )
     ) {
       return;
@@ -148,7 +280,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/events/${eventId}`, {
+      const response = await fetch(`/api/admin/events/${eventId}`, {
         method: "DELETE",
       });
 
@@ -158,7 +290,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
         throw new Error(data.error || "Failed to delete event");
       }
 
-      fetchEvents();
+      await fetchEvents();
       onUpdate();
     } catch (err: any) {
       alert(`Error: ${err.message}`);
@@ -213,7 +345,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
           </button>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-700">
               <tr>
@@ -231,6 +363,12 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
                   Capacity
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                  Fee
+                </th>
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                  Mode
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
                   Registered
@@ -280,19 +418,16 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                   <td className="px-6 py-4 text-sm text-gray-300">
                     {event.capacity}
                   </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span
-                      className={`font-medium ${
-                        event.registeredCount >= event.capacity
-                          ? "text-red-400"
-                          : event.registeredCount >= event.capacity * 0.8
-                            ? "text-yellow-400"
-                            : "text-green-400"
-                      }`}
-                    >
-                      {event.registeredCount}
-                    </span>
-                    <span className="text-gray-500"> / {event.capacity}</span>
+                  <td className="px-6 py-4 text-sm text-gray-300">
+                    {event.registrationFee && event.registrationFee > 0
+                      ? `₹${event.registrationFee}`
+                      : "Free"}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-300">
+                    {event.isOnline ? "Online" : "Offline"}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-300">
+                    {event.registeredCount}
                   </td>
                   <td className="px-6 py-4 text-sm">
                     <button
@@ -317,7 +452,6 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
         </div>
       )}
 
-      {/* Create/Edit Modal */}
       {(editingEvent || isCreating) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
@@ -341,6 +475,11 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+                {fieldErrors.title && (
+                  <p className="text-xs text-red-300 mt-1">
+                    {fieldErrors.title}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -356,6 +495,11 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+                {fieldErrors.description && (
+                  <p className="text-xs text-red-300 mt-1">
+                    {fieldErrors.description}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -372,6 +516,11 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     required
                   />
+                  {fieldErrors.date && (
+                    <p className="text-xs text-red-300 mt-1">
+                      {fieldErrors.date}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -394,6 +543,11 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                     <option value="Competition">Competition</option>
                     <option value="Other">Other</option>
                   </select>
+                  {fieldErrors.category && (
+                    <p className="text-xs text-red-300 mt-1">
+                      {fieldErrors.category}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -410,56 +564,174 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                   className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
+                {fieldErrors.location && (
+                  <p className="text-xs text-red-300 mt-1">
+                    {fieldErrors.location}
+                  </p>
+                )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Image URL
-                </label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, imageUrl: e.target.value })
-                  }
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Enter a URL for the event image
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Image URL *
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.imageUrl}
+                    onChange={(e) =>
+                      setFormData({ ...formData, imageUrl: e.target.value })
+                    }
+                    placeholder="https://example.com/image.jpg"
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Enter a URL for the event image
+                  </p>
+                  {fieldErrors.imageUrl && (
+                    <p className="text-xs text-red-300 mt-1">
+                      {fieldErrors.imageUrl}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Capacity *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.capacity}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        capacity: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min={1}
+                    required
+                  />
+                  {fieldErrors.capacity && (
+                    <p className="text-xs text-red-300 mt-1">
+                      {fieldErrors.capacity}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Capacity *
-                </label>
-                <input
-                  type="number"
-                  value={formData.capacity}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      capacity: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  min="1"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Maximum number of participants
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Registration Fee (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.registrationFee}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        registrationFee: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min={0}
+                    required
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Set to 0 for free events
+                  </p>
+                  {fieldErrors.registrationFee && (
+                    <p className="text-xs text-red-300 mt-1">
+                      {fieldErrors.registrationFee}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Event Mode *
+                  </label>
+                  <select
+                    value={formData.isOnline ? "online" : "offline"}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        isOnline: e.target.value === "online",
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="offline">Offline</option>
+                    <option value="online">Online</option>
+                  </select>
+                  {fieldErrors.isOnline && (
+                    <p className="text-xs text-red-300 mt-1">
+                      {fieldErrors.isOnline}
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Price Amount (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.priceAmount}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        priceAmount: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    min={0}
+                    required
+                  />
+                  {fieldErrors.priceAmount && (
+                    <p className="text-xs text-red-300 mt-1">
+                      {fieldErrors.priceAmount}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Rules (JSON array) *
+                  </label>
+                  <textarea
+                    value={formData.rules}
+                    onChange={(e) =>
+                      setFormData({ ...formData, rules: e.target.value })
+                    }
+                    rows={3}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Example: ["Bring ID card", "Report 30 min early"]
+                  </p>
+                  {fieldErrors.rules && (
+                    <p className="text-xs text-red-300 mt-1">
+                      {fieldErrors.rules}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
                   disabled={loading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition"
                 >
                   {loading
-                    ? "Processing..."
+                    ? "Saving..."
                     : isCreating
                       ? "Create Event"
                       : "Update Event"}
@@ -467,8 +739,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                 <button
                   type="button"
                   onClick={handleCancel}
-                  disabled={loading}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 text-white font-semibold py-2 px-4 rounded transition"
+                  className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded transition"
                 >
                   Cancel
                 </button>

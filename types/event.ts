@@ -10,6 +10,9 @@ export interface Event {
   registeredCount: number;
   registrationFee?: number; // Optional fee amount, if null or 0 then free
   isOnline: boolean; // true for online events, false for offline
+  rules?: string[];
+  priceAmount?: number;
+  createdAt?: string;
 }
 
 export interface EventRegistration {
