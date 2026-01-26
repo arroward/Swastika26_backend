@@ -14,7 +14,7 @@ export async function POST(request: Request) {
         }
 
         // 1. Save Notification to Firestore 'notifications' collection
-        await adminFirestore.collection('notifications').add({
+        const docRef = await adminFirestore.collection('notifications').add({
             title,
             body,
             imageUrl: imageUrl || null,
@@ -29,77 +29,104 @@ export async function POST(request: Request) {
             return NextResponse.json({ message: 'No subscribers found' });
         }
 
-        const tokens = snapshot.docs.map(doc => doc.data().token).filter(Boolean);
+        // Map docs to extract token AND document ID (for safe deletion)
+        const tokenData = snapshot.docs.map(doc => ({
+            id: doc.id,
+            token: doc.data().token
+        })).filter(item => item.token);
 
-        if (tokens.length === 0) {
+        if (tokenData.length === 0) {
             return NextResponse.json({ message: 'No valid tokens found' });
         }
 
-        // 3. Send Multicast Message
-        // Batching logic: sendEachForMulticast handles up to 500 tokens.
-
-        const message = {
-            notification: {
-                title,
-                body,
-                imageUrl: imageUrl || undefined,
-            },
-            webpush: {
-                notification: {
-                    icon: '/logo/wh_sw.png',
-                    image: imageUrl || undefined,
-                }
-            },
-            data: {
-                url: '/',
-            },
-            tokens,
-        };
-
-        // Note: If tokens > 500, we'd need to chunk the array.
-        // For MVP, assuming < 500.
-        const response = await adminMessaging.sendEachForMulticast(message);
-
-        // Collect errors and clean up invalid tokens
+        // 3. Send Multicast Message (Chunked)
+        // Firebase sendEachForMulticast allows up to 500 tokens per batch.
+        const BATCH_SIZE = 500;
+        let successCount = 0;
+        let failureCount = 0;
         const errors: any[] = [];
-        const failedTokens: string[] = [];
+        const failedDocIds: string[] = [];
 
-        if (response.failureCount > 0) {
-            response.responses.forEach((resp, idx) => {
-                if (!resp.success) {
-                    const error = resp.error;
-                    errors.push({
-                        token: tokens[idx].substring(0, 10) + '...',
-                        error: error
-                    });
+        // Loop through tokens in chunks
+        for (let i = 0; i < tokenData.length; i += BATCH_SIZE) {
+            const chunk = tokenData.slice(i, i + BATCH_SIZE);
+            const chunkTokens = chunk.map(t => t.token);
 
-                    // Identify invalid tokens for cleanup
-                    if (error?.code === 'messaging/registration-token-not-registered' ||
-                        error?.code === 'messaging/invalid-argument') {
-                        failedTokens.push(tokens[idx]);
+            const message = {
+                notification: {
+                    title,
+                    body,
+                    imageUrl: imageUrl || undefined,
+                },
+                webpush: {
+                    notification: {
+                        icon: '/logo/wh_sw.png',
+                        image: imageUrl || undefined,
                     }
-                }
-            });
-            console.log(`Failed to send to ${response.failureCount} tokens.`, errors);
+                },
+                data: {
+                    url: '/',
+                },
+                tokens: chunkTokens,
+            };
 
-            // Clean up invalid tokens from Firestore
-            if (failedTokens.length > 0 && adminFirestore) {
-                const db = adminFirestore;
-                try {
-                    const batch = db.batch();
-                    failedTokens.forEach(t => batch.delete(db.collection('fcm_tokens').doc(t)));
-                    await batch.commit();
-                    console.log(`Cleaned up ${failedTokens.length} invalid/stale tokens.`);
-                } catch (cleanupError) {
-                    console.error("Failed to cleanup tokens:", cleanupError);
-                }
+            const response = await adminMessaging.sendEachForMulticast(message);
+
+            successCount += response.successCount;
+            failureCount += response.failureCount;
+
+            if (response.failureCount > 0) {
+                response.responses.forEach((resp, idx) => {
+                    if (!resp.success) {
+                        const error = resp.error;
+                        errors.push({
+                            token: chunkTokens[idx].substring(0, 10) + '...',
+                            error: error
+                        });
+
+                        // Identify invalid tokens for cleanup
+                        if (error?.code === 'messaging/registration-token-not-registered' ||
+                            error?.code === 'messaging/invalid-argument') {
+                            failedDocIds.push(chunk[idx].id); // Record the Document ID for deletion
+                        }
+                    }
+                });
             }
         }
 
+        console.log(`Broadcast result: ${successCount} success, ${failureCount} failed.`);
+
+        // Clean up invalid tokens from Firestore
+        if (failedDocIds.length > 0 && adminFirestore) {
+            const db = adminFirestore;
+            // Batch delete (limit 500 per batch)
+            const DELETE_BATCH_SIZE = 500;
+            try {
+                for (let i = 0; i < failedDocIds.length; i += DELETE_BATCH_SIZE) {
+                    const batchIds = failedDocIds.slice(i, i + DELETE_BATCH_SIZE);
+                    const batch = db.batch();
+                    batchIds.forEach(id => batch.delete(db.collection('fcm_tokens').doc(id)));
+                    await batch.commit();
+                }
+                console.log(`Cleaned up ${failedDocIds.length} invalid/stale tokens.`);
+            } catch (cleanupError) {
+                console.error("Failed to cleanup tokens:", cleanupError);
+            }
+        }
+
+        // Update Firestore document with results
+        await docRef.update({
+            successCount,
+            failureCount,
+            status: failureCount > 0 ? 'completed_with_errors' : 'completed',
+            completedAt: new Date(),
+            failureDetails: errors
+        });
+
         return NextResponse.json({
             success: true,
-            successCount: response.successCount,
-            failureCount: response.failureCount,
+            successCount,
+            failureCount,
             errors: errors.length > 0 ? errors : undefined
         });
 
