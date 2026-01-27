@@ -11,7 +11,11 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+import { getAuth } from "firebase/auth";
+
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+
+const auth = getAuth(app);
 
 const messaging = async () => {
     try {
@@ -25,4 +29,4 @@ const messaging = async () => {
 
 const db = getFirestore(app);
 
-export { app, messaging, db };
+export { app, messaging, db, auth };
