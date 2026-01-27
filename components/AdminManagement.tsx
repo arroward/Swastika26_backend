@@ -50,8 +50,9 @@ function AssignedEventsCell({
       if (data.success && data.eventIds && data.eventIds.length > 0) {
         // Fetch event details
         const eventsResponse = await fetch("/api/events");
-        const allEvents = await eventsResponse.json();
-        const names = allEvents
+        const allEventsJson = await eventsResponse.json();
+        const allEvents: Event[] = allEventsJson?.data ?? allEventsJson;
+        const names = (allEvents || [])
           .filter((e: Event) => data.eventIds.includes(e.id))
           .map((e: Event) => e.title);
         setEventNames(names);
@@ -115,8 +116,9 @@ export default function AdminManagement({
   const fetchEvents = async () => {
     try {
       const response = await fetch("/api/events");
-      const events = await response.json();
-      setEvents(events);
+      const json = await response.json();
+      const eventsData: Event[] = json?.data ?? json;
+      setEvents(eventsData || []);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -438,12 +440,12 @@ export default function AdminManagement({
                     <p className="text-xs text-gray-400 mb-1">
                       Assigned Events
                     </p>
-                    <p className="text-xs text-gray-300">
+                    <div className="text-xs text-gray-300">
                       <AssignedEventsCell
                         adminId={admin.id}
                         role={admin.role}
                       />
-                    </p>
+                    </div>
                   </div>
 
                   <div className="border-t border-gray-600 pt-2 flex justify-between items-center">
