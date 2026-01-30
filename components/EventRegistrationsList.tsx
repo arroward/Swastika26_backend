@@ -22,6 +22,15 @@ interface EventRegistrationsListProps {
   eventTitle?: string;
 }
 
+async function parseJsonSafe(response: Response) {
+  try {
+    return await response.clone().json();
+  } catch (error) {
+    console.error("Failed to parse JSON response:", error);
+    return null;
+  }
+}
+
 export default function EventRegistrationsList({
   eventId,
   eventTitle,
@@ -40,16 +49,25 @@ export default function EventRegistrationsList({
     setError(null);
     try {
       console.log("Fetching registrations for event:", eventId);
-      const response = await fetch(`/api/events/${eventId}/registrations`);
-      const data = await response.json();
+      const response = await fetch(
+        `/api/admin/registrations?eventId=${encodeURIComponent(eventId)}`,
+      );
+      const data = await parseJsonSafe(response);
 
       console.log("API response:", data);
 
-      if (data.success) {
-        setRegistrations(data.data);
+      if (response.ok && data?.success) {
+        setRegistrations(Array.isArray(data.data) ? data.data : []);
+        return;
+      }
+
+      const message = data?.error || "Failed to load registrations";
+      console.error("Failed to fetch registrations:", message);
+
+      if (response.status === 404) {
+        setRegistrations([]);
       } else {
-        console.error("Failed to fetch registrations:", data.error);
-        setError(data.error || "Failed to load registrations");
+        setError(message);
       }
     } catch (error) {
       console.error("Error fetching registrations:", error);
