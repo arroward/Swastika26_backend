@@ -48,16 +48,16 @@ function createTransporter() {
 /**
  * Send ticket email to customer
  */
-export async function sendTicketEmail({ purchase, tickets }: SendTicketEmailParams): Promise<void> {
+export async function sendTicketEmail({ purchase }: SendTicketEmailParams): Promise<void> {
   const transporter = createTransporter();
-  const emailHTML = generateTicketEmailHTML(purchase, tickets);
+  const emailHTML = generateTicketEmailHTML(purchase);
 
   const fromEmail = process.env.SMTP_FROM_EMAIL || `"Swastika '26" <${process.env.SMTP_USER}>`;
 
   await transporter.sendMail({
     from: fromEmail,
-    to: purchase.email,
-    subject: `🔥 SWASTIKA'26 - Your Passes Are Here! (Order #${purchase.purchaseId})`,
+    to: purchase.buyerEmail,
+    subject: `🔥 SWASTIKA'26 - Your Tickets Are Here! (Order #${purchase.purchaseId})`,
     html: emailHTML,
   });
 }
@@ -67,13 +67,13 @@ export async function sendTicketEmail({ purchase, tickets }: SendTicketEmailPara
  */
 export async function sendTicketReminderEmail({ purchase, tickets }: SendTicketEmailParams): Promise<void> {
   const transporter = createTransporter();
-  const emailHTML = generateReminderEmailHTML(purchase, tickets);
+  const emailHTML = generateReminderEmailHTML(purchase, tickets || []);
 
   const fromEmail = process.env.SMTP_FROM_EMAIL || `"Swastika '26" <${process.env.SMTP_USER}>`;
 
   await transporter.sendMail({
     from: fromEmail,
-    to: purchase.email,
+    to: purchase.buyerEmail,
     subject: `⚡ Final Reminder: Swastika '26 is Tomorrow!`,
     html: emailHTML,
   });

@@ -9,7 +9,12 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: NextRequest) {
     try {
         const body: ValidateScanRequest = await req.json();
-        const { ticketId, currentDay, scannedBy, location, deviceId } = body;
+        let { ticketId, currentDay, scannedBy, location, deviceId } = body;
+
+        // Strip prefix if scanned from QR code directly
+        if (ticketId && ticketId.startsWith('swastika://ticket/')) {
+            ticketId = ticketId.replace('swastika://ticket/', '');
+        }
 
         // 1. Validation
         if (!ticketId || !currentDay || !scannedBy || !location || !deviceId) {
@@ -26,84 +31,97 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 2. Get ticket from database
-        const ticketDoc = await adminFirestore.collection('tickets').doc(ticketId).get();
+        const result = await adminFirestore!.runTransaction(async (transaction) => {
+            const ticketRef = adminFirestore!.collection('tickets').doc(ticketId);
+            const ticketDoc = await transaction.get(ticketRef);
 
-        let ticket: Ticket | null = null;
-        if (ticketDoc.exists) {
-            const data = ticketDoc.data();
-            ticket = {
-                ticketId,
-                purchaseId: data?.purchaseId || '',
-                type: data?.type,
-                holderName: data?.holderName,
-                holderEmail: data?.holderEmail,
-                holderPhone: data?.holderPhone,
-                qrCode: data?.qrCode || '',
-                scans: data?.scans || [],
-                allowedDays: data?.allowedDays || [],
-                maxScans: data?.maxScans || 0,
-                status: data?.status,
-                createdAt: data?.createdAt?.toDate() || new Date(),
-                updatedAt: data?.updatedAt?.toDate() || new Date()
-            };
-        }
+            if (!ticketDoc.exists) {
+                return {
+                    success: false,
+                    status: 404,
+                    data: { valid: false, reason: "TICKET_NOT_FOUND", message: "Invalid Swastika Ticket QR Code" }
+                };
+            }
 
-        // 3. Validate scan
-        const validationResult = validateTicketScan(ticket, currentDay);
+            const ticketData = ticketDoc.data() as Ticket;
 
-        // 4. If valid, record the scan
-        if (validationResult.valid && ticket) {
+            // 2. Check if already USED
+            if (ticketData.status === 'USED') {
+                return {
+                    success: false,
+                    status: 400,
+                    data: { valid: false, reason: "ALREADY_SCANNED", message: "Invalid Swastika Ticket QR Code" }
+                };
+            }
+
+            // 3. Validate scan
+            const validationResult = validateTicketScan(ticketData, currentDay);
+
+            if (!validationResult.valid) {
+                return {
+                    success: false,
+                    status: 400,
+                    data: validationResult
+                };
+            }
+
+            // 3. Record the scan and update status
             const scanRecord: ScanRecord = {
                 day: currentDay,
                 timestamp: new Date(),
-                scannedBy,
-                location,
-                deviceId
+                gate: location // Mapping location to gate as per new schema
             };
 
-            // Add scan to ticket
-            const updatedScans = [...ticket.scans, scanRecord];
+            const updatedScans = [...(ticketData.scans || []), scanRecord];
 
-            // Update ticket status if fully used
-            const newStatus = updatedScans.length >= ticket.maxScans ? 'USED' : 'ACTIVE';
+            // Determine if ticket should be marked as USED
+            // Based on TICKET_TYPES config
+            const { TICKET_TYPES } = await import('@/types/ticketing');
+            const config = TICKET_TYPES[ticketData.type];
+            const isFullyUsed = updatedScans.length >= config.maxScans;
 
-            // Update in database
-            await adminFirestore.collection('tickets').doc(ticketId).update({
+            transaction.update(ticketRef, {
                 scans: updatedScans,
-                status: newStatus,
+                status: isFullyUsed ? 'USED' : 'ACTIVE',
                 updatedAt: new Date()
-            });
+            } as any);
 
-            // Log scan attempt
-            await adminFirestore.collection('scan_logs').add({
+            // 4. Log the success scan
+            const logRef = adminFirestore!.collection('scan_logs').doc();
+            transaction.set(logRef, {
                 ticketId,
-                purchaseId: ticket.purchaseId,
+                purchaseId: ticketData.purchaseId,
                 day: currentDay,
                 scannedBy,
-                location,
+                gate: location,
                 deviceId,
                 timestamp: new Date(),
-                result: 'SUCCESS',
-                holderName: ticket.holderName
+                result: 'SUCCESS'
             });
-        } else {
-            // Log failed scan attempt
-            await adminFirestore.collection('scan_logs').add({
+
+            return {
+                success: true,
+                status: 200,
+                data: validationResult
+            };
+        });
+
+        if (!result.success) {
+            // Log failed scan attempt if needed
+            await adminFirestore!.collection('scan_logs').add({
                 ticketId,
                 day: currentDay,
                 scannedBy,
-                location,
+                gate: location,
                 deviceId,
                 timestamp: new Date(),
                 result: 'FAILED',
-                reason: validationResult.reason,
-                message: validationResult.message
+                reason: (result.data as any).reason,
+                message: (result.data as any).message
             });
         }
 
-        // 5. Return validation result
-        return NextResponse.json(validationResult, { status: validationResult.valid ? 200 : 400 });
+        return NextResponse.json(result.data, { status: result.status });
 
     } catch (error: any) {
         console.error('Error validating scan:', error);

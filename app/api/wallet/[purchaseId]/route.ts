@@ -11,13 +11,6 @@ export async function GET(
     try {
         const { purchaseId } = params;
 
-        if (!purchaseId) {
-            return NextResponse.json(
-                { error: 'Purchase ID is required' },
-                { status: 400 }
-            );
-        }
-
         if (!adminFirestore) {
             return NextResponse.json(
                 { error: 'Database not initialized' },
@@ -25,7 +18,7 @@ export async function GET(
             );
         }
 
-        // 1. Get purchase from database
+        // 1. Fetch purchase details
         const purchaseDoc = await adminFirestore.collection('purchases').doc(purchaseId).get();
 
         if (!purchaseDoc.exists) {
@@ -35,45 +28,19 @@ export async function GET(
             );
         }
 
-        const purchase = purchaseDoc.data();
+        const purchaseData = purchaseDoc.data();
 
-        // 2. Get all tickets for this purchase
-        const ticketIds = purchase?.tickets || [];
-        const tickets = [];
+        // 2. Fetch associated tickets
+        const ticketsSnapshot = await adminFirestore.collection('tickets')
+            .where('purchaseId', '==', purchaseId)
+            .get();
 
-        for (const ticketId of ticketIds) {
-            const ticketDoc = await adminFirestore.collection('tickets').doc(ticketId).get();
-            if (ticketDoc.exists) {
-                const ticketData = ticketDoc.data();
-                tickets.push({
-                    ticketId,
-                    type: ticketData?.type,
-                    status: ticketData?.status,
-                    scans: ticketData?.scans || [],
-                    holderName: ticketData?.holderName,
-                    holderEmail: ticketData?.holderEmail,
-                    holderPhone: ticketData?.holderPhone,
-                    qrCode: ticketData?.qrCode,
-                    allowedDays: ticketData?.allowedDays,
-                    maxScans: ticketData?.maxScans
-                });
-            }
-        }
+        const tickets = ticketsSnapshot.docs.map(doc => doc.data());
 
-        // 3. Return wallet data
-        const response = {
-            purchaseId,
-            email: purchase?.email,
-            phone: purchase?.phone,
-            name: purchase?.name,
-            totalAmount: purchase?.totalAmount,
-            paymentStatus: purchase?.paymentStatus,
-            purchaseDate: purchase?.purchaseDate,
-            status: purchase?.status,
-            tickets
-        };
-
-        return NextResponse.json(response, { status: 200 });
+        return NextResponse.json({
+            purchase: purchaseData,
+            tickets: tickets
+        }, { status: 200 });
 
     } catch (error: any) {
         console.error('Error fetching wallet:', error);

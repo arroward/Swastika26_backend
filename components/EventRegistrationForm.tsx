@@ -79,25 +79,27 @@ export default function EventRegistrationForm({
     setFileError("");
 
     if (file) {
-      // Validate file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        setFileError("File size must be less than 10MB");
+      // Validate file size (max 500MB)
+      if (file.size > 500 * 1024 * 1024) {
+        setFileError("File size must be less than 500MB");
         setUploadedFile(null);
         return;
       }
 
-      // Validate file type (pdf, doc, docx, images)
+      // Validate file type (images and videos only)
       const allowedTypes = [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "image/jpeg",
         "image/png",
         "image/jpg",
+        "image/webp",
+        "video/mp4",
+        "video/webm",
+        "video/ogg",
+        "video/quicktime"
       ];
 
       if (!allowedTypes.includes(file.type)) {
-        setFileError("Only PDF, DOC, DOCX, JPG, and PNG files are allowed");
+        setFileError("Only Image (JPG, PNG, WEBP) and Video (MP4, WEBM, MOV) files are allowed");
         setUploadedFile(null);
         return;
       }
@@ -176,7 +178,47 @@ export default function EventRegistrationForm({
     setError("");
 
     try {
-      // Prepare form data with file if needed
+      let fileUrl = "";
+
+      // Handle File Upload client-side if a file is selected
+      if (event.isOnline && uploadedFile) {
+        try {
+          // 1. Get Presigned URL
+          const presignRes = await fetch("/api/upload/url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              filename: uploadedFile.name,
+              fileType: uploadedFile.type,
+            }),
+          });
+
+          if (!presignRes.ok) throw new Error("Failed to get upload URL");
+
+          const { signedUrl, publicUrl } = await presignRes.json();
+
+          // 2. Upload to R2 directly
+          const uploadRes = await fetch(signedUrl, {
+            method: "PUT",
+            headers: {
+              "Content-Type": uploadedFile.type,
+            },
+            body: uploadedFile,
+          });
+
+          if (!uploadRes.ok) throw new Error("File upload failed");
+
+          fileUrl = publicUrl;
+          console.log("File uploaded successfully:", fileUrl);
+        } catch (uploadErr) {
+          console.error("Client-side upload error:", uploadErr);
+          // Fallback or panic? User specifically requested client-side upload for large files.
+          // We will throw error to avoid server timeout on large files.
+          throw new Error("Failed to upload file. Please check your internet connection and try again.");
+        }
+      }
+
+      // Prepare form data
       const submitData = new FormData();
       submitData.append("eventId", event.id);
       submitData.append("fullName", formData.fullName);
@@ -194,10 +236,13 @@ export default function EventRegistrationForm({
         submitData.append("accountHolderName", formData.accountHolderName);
       }
 
-      // Add file for online events
-      if (event.isOnline && uploadedFile) {
-        submitData.append("file", uploadedFile);
+      // If we have a file URL, send it.
+      if (fileUrl) {
+        submitData.append("uploadFileUrl", fileUrl);
       }
+      // Fallback: If for some reason client-side upload logic was skipped but we have a file and NO URL (unlikely given logic above), 
+      // we could send the file. But we are opting for strict client-side preference.
+      // However, if the event is online but no fileUrl (and logic failed above), it would have thrown.
 
       const response = await fetch("/api/register", {
         method: "POST",
@@ -565,7 +610,7 @@ export default function EventRegistrationForm({
                   type="file"
                   id="fileUpload"
                   onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  accept="image/*,video/*"
                   className="w-full px-5 py-4 rounded-xl bg-black/20 border border-red-500/20 hover:bg-red-900/10 transition-all text-sm text-gray-300
                     file:mr-4 file:py-2.5 file:px-5 file:rounded-lg file:border-0 
                     file:text-sm file:font-semibold file:bg-red-600 file:text-white 

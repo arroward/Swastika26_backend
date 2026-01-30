@@ -35,95 +35,36 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (!isValidEmail(email)) {
-            return NextResponse.json(
-                { error: 'Invalid email format' },
-                { status: 400 }
-            );
-        }
-
-        if (!isValidPhone(phone)) {
-            return NextResponse.json(
-                { error: 'Invalid phone number format' },
-                { status: 400 }
-            );
-        }
-
         // 2. Calculate total amount
         const totalAmount = calculateTotalAmount(tickets);
 
         // 3. Generate Purchase ID
         const purchaseId = generatePurchaseId();
 
-        // 4. Create tickets
-        const ticketIds: string[] = [];
-        const ticketData: { ticketId: string; type: TicketType }[] = [];
-
-        for (const ticketItem of tickets) {
-            for (let i = 0; i < ticketItem.quantity; i++) {
-                const ticketId = generateTicketId();
-                const qrCode = generateQRCode(ticketId);
-
-                const ticket: Ticket = {
-                    ticketId,
-                    purchaseId,
-                    type: ticketItem.type,
-                    holderName: name, // Default to buyer name
-                    holderEmail: email,
-                    holderPhone: phone,
-                    qrCode,
-                    scans: [],
-                    allowedDays: getAllowedDays(ticketItem.type),
-                    maxScans: getMaxScans(ticketItem.type),
-                    status: "ACTIVE",
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                };
-
-                // Save ticket to Firestore
-                if (adminFirestore) {
-                    await adminFirestore.collection('tickets').doc(ticketId).set({
-                        ...ticket,
-                        createdAt: new Date(),
-                        updatedAt: new Date()
-                    });
-                }
-
-                ticketIds.push(ticketId);
-                ticketData.push({ ticketId, type: ticketItem.type });
-            }
-        }
-
-        // 5. Create purchase record
+        // 4. Create purchase record (PENDING)
         const purchase: Purchase = {
             purchaseId,
-            email,
-            phone,
-            name,
+            buyerEmail: email,
+            buyerPhone: phone,
+            buyerName: name,
             totalAmount,
-            paymentStatus: "PENDING",
-            paymentId: "", // Will be updated after payment
-            tickets: ticketIds,
             purchaseDate: new Date(),
-            status: "ACTIVE"
+            status: "PENDING"
         };
 
         // Save purchase to Firestore
         if (adminFirestore) {
-            await adminFirestore.collection('purchases').doc(purchaseId).set({
-                ...purchase,
-                purchaseDate: new Date()
-            });
+            await adminFirestore.collection('purchases').doc(purchaseId).set(purchase);
         }
 
-        // 6. Generate wallet URL
+        // 5. Generate wallet URL
         const walletUrl = SITE_CONFIG.links.wallet(purchaseId);
 
-        // 7. Return response
+        // 6. Return response
         const response: CreatePurchaseResponse = {
             purchaseId,
             totalAmount,
-            tickets: ticketData,
+            tickets: [], // Tickets will be created during verification
             walletUrl
         };
 

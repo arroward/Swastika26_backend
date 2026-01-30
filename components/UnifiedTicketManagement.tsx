@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, setDoc, getDoc, serverTimestamp, increment } from 'firebase/firestore';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, setDoc, getDoc, getDocs, where, serverTimestamp, increment } from 'firebase/firestore';
+import { Html5Qrcode } from 'html5-qrcode';
 import { motion } from 'framer-motion';
 import {
     ScanLine, CheckCircle2, UserCheck, ShieldCheck, Check, X,
@@ -29,7 +29,7 @@ interface TicketBooking {
     count?: number;
     totalAmount: number;
     createdAt: Timestamp;
-    status: 'pending' | 'verified' | 'rejected';
+    status: 'pending' | 'verified' | 'rejected' | 'ACTIVE' | 'USED' | 'CANCELLED';
     mailStatus: 'pending' | 'sent' | 'failed';
     rejectionReason?: string;
     admitted?: {
@@ -39,6 +39,19 @@ interface TicketBooking {
     } | boolean;
     admittedAt?: Timestamp;
 }
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+const checkAdmitted = (admitted: any): boolean => {
+    if (!admitted) return false;
+    if (admitted === true) return true;
+    if (typeof admitted === 'object') {
+        return Object.values(admitted).some(v => typeof v === 'number' && v > 0);
+    }
+    return false;
+};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -65,8 +78,8 @@ export default function UnifiedTicketManagement() {
                 <button
                     onClick={() => setActiveView('verify')}
                     className={`flex flex-col md:flex-row items-center justify-center gap-2 px-2 md:px-6 py-3 rounded-lg text-xs md:text-sm font-bold transition-all ${activeView === 'verify'
-                            ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/10'
-                            : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
+                        ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/10'
+                        : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
                         }`}
                 >
                     <CheckCircle2 className="w-5 h-5 md:w-4 md:h-4" />
@@ -75,8 +88,8 @@ export default function UnifiedTicketManagement() {
                 <button
                     onClick={() => setActiveView('scan')}
                     className={`flex flex-col md:flex-row items-center justify-center gap-2 px-2 md:px-6 py-3 rounded-lg text-xs md:text-sm font-bold transition-all ${activeView === 'scan'
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                            : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                        : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
                         }`}
                 >
                     <ScanLine className="w-5 h-5 md:w-4 md:h-4" />
@@ -85,8 +98,8 @@ export default function UnifiedTicketManagement() {
                 <button
                     onClick={() => setActiveView('admitted')}
                     className={`flex flex-col md:flex-row items-center justify-center gap-2 px-2 md:px-6 py-3 rounded-lg text-xs md:text-sm font-bold transition-all ${activeView === 'admitted'
-                            ? 'bg-green-600 text-white shadow-lg shadow-green-500/20'
-                            : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
+                        ? 'bg-green-600 text-white shadow-lg shadow-green-500/20'
+                        : 'text-gray-500 hover:text-gray-200 hover:bg-white/5'
                         }`}
                 >
                     <UserCheck className="w-5 h-5 md:w-4 md:h-4" />
@@ -150,7 +163,7 @@ function VerificationPanel({ viewMode = 'verification' }: VerificationPanelProps
                 else if (p.status === 'verified') s.verified++;
                 else if (p.status === 'rejected') s.rejected++;
 
-                if (p.admitted) s.admitted++;
+                if (checkAdmitted(p.admitted)) s.admitted++;
             });
             setStats(s);
 
@@ -397,7 +410,7 @@ function PassCard({
                             </span>
                         )}
 
-                        {pass.admitted && (
+                        {checkAdmitted(pass.admitted) && (
                             <span className="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1">
                                 <ScanLine className="w-3 h-3" /> ADMITTED
                             </span>
@@ -487,7 +500,8 @@ function TicketScanner() {
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
     const [admitCount, setAdmitCount] = useState<number>(1);
-    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const scannerInstanceRef = useRef<Html5Qrcode | null>(null);
+    const isTransitioning = useRef(false);
 
     const [admissionStatus, setAdmissionStatus] = useState<{
         allowed: number;
@@ -498,55 +512,67 @@ function TicketScanner() {
     } | null>(null);
 
     useEffect(() => {
-        if (scannedData) {
-            if (scannerRef.current) {
-                scannerRef.current.clear().catch(console.warn);
-                scannerRef.current = null;
-            }
-            return;
-        }
+        let mounted = true;
 
-        const timer = setTimeout(async () => {
-            if (scannedData) return;
-            if (!document.getElementById("reader")) return;
+        const manageScanner = async () => {
+            if (isTransitioning.current) return;
 
-            if (scannerRef.current) {
-                try {
-                    await scannerRef.current.clear();
-                } catch (e) {
-                    console.warn("Failed to clear previous scanner instance", e);
-                }
-                scannerRef.current = null;
-            }
+            const readerElement = document.getElementById("reader");
+            if (!readerElement) return;
 
             try {
-                const scanner = new Html5QrcodeScanner(
-                    "reader",
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 },
-                        aspectRatio: 1.0,
-                        showTorchButtonIfSupported: true,
-                        videoConstraints: {
-                            facingMode: { ideal: "environment" }
-                        }
-                    },
-                    false
-                );
+                if (!scannerInstanceRef.current) {
+                    scannerInstanceRef.current = new Html5Qrcode("reader");
+                }
 
-                scanner.render(onScanSuccess, onScanFailure);
-                scannerRef.current = scanner;
+                const scanner = scannerInstanceRef.current;
+
+                if (scannedData) {
+                    // Logic: If there is data, scanner should be stopped
+                    if (scanner.isScanning) {
+                        isTransitioning.current = true;
+                        await scanner.stop();
+                        isTransitioning.current = false;
+                    }
+                } else {
+                    // Logic: If no data, scanner should be starting or running
+                    if (!scanner.isScanning) {
+                        isTransitioning.current = true;
+                        await scanner.start(
+                            { facingMode: "environment" },
+                            {
+                                fps: 10,
+                                qrbox: { width: 250, height: 250 },
+                                aspectRatio: 1.0,
+                            },
+                            (decodedText: string) => {
+                                if (mounted) onScanSuccess(decodedText, null);
+                            },
+                            () => { /* ignore */ }
+                        );
+                        isTransitioning.current = false;
+                    }
+                }
             } catch (err) {
-                console.error("Scanner init error:", err);
-                setError("Camera failed to start. Please refresh page.");
+                console.error("Scanner state error:", err);
+                isTransitioning.current = false;
+                if (mounted && !String(err).includes("scanning")) {
+                    setError("Scanner error. Please try resetting.");
+                }
             }
-        }, 600);
+        };
+
+        const timer = setTimeout(manageScanner, 300);
 
         return () => {
+            mounted = false;
             clearTimeout(timer);
-            if (scannerRef.current) {
-                scannerRef.current.clear().catch(err => console.warn("Cleanup clear failed", err));
-                scannerRef.current = null;
+            // Cleanup on tab switch or unmount
+            if (scannerInstanceRef.current && scannerInstanceRef.current.isScanning && !isTransitioning.current) {
+                isTransitioning.current = true;
+                scannerInstanceRef.current.stop()
+                    .then(() => { isTransitioning.current = false; })
+                    .catch(() => { isTransitioning.current = false; });
             }
         };
     }, [scannedData]);
@@ -588,17 +614,17 @@ function TicketScanner() {
 
         const remaining = Math.max(0, allowed - admittedCount);
 
-        const isVerified = ticket.status === 'verified';
+        const isVerified = ticket.status === 'verified' || ticket.status === 'ACTIVE' || ticket.status === 'USED';
         const hasRemaining = remaining > 0;
         const countValid = countToAdmit > 0 && countToAdmit <= remaining;
 
         const canEnter = isVerified && hasRemaining && countValid;
 
         let message = '';
-        if (!isVerified) message = `Status is ${ticket.status}`;
-        else if (allowed === 0) message = `Not valid for ${currentDay === 'day1' ? 'Day 1' : 'Day 2'}`;
+        if (!isVerified) message = `Invalid Status: ${ticket.status}`;
+        else if (allowed === 0) message = `No ${currentDay === 'day1' ? 'D1' : 'D2'} Access`;
         else if (remaining === 0) message = 'All Admitted';
-        else if (!countValid) message = `Excess Count (Max ${remaining})`;
+        else if (!countValid) message = `Limit Exceeded (${remaining})`;
         else message = 'Access Granted';
 
         return { allowed, admitted: admittedCount, remaining, canEnter, message };
@@ -614,36 +640,80 @@ function TicketScanner() {
         setTicketInfo(null);
 
         try {
-            const parts = decodedText.split(':');
-            if (!decodedText.startsWith('SW26:') || parts.length < 2) {
-                throw new Error("Invalid Swastika Ticket QR Code");
+            const text = decodedText.trim();
+            let parsedId = '';
+
+            // 1. Handle deep links or URLs
+            if (text.includes('://') || text.startsWith('http')) {
+                parsedId = text.split('/').pop() || '';
+            }
+            // 2. Handle legacy format with colons (SW26:ID:TYPE:COUNT)
+            else if (text.includes(':')) {
+                const parts = text.split(':');
+                parsedId = parts[1] || parts[0];
+            }
+            // 3. Raw format
+            else {
+                parsedId = text;
             }
 
-            const docId = parts[1];
-            fetchTicket(docId);
-        } catch (err: any) {
-            setError(err.message);
-        }
-    };
+            // Cleanup query strings if present
+            parsedId = parsedId.split('?')[0];
 
-    const onScanFailure = (error: any) => {
-        // Silent
+            if (!parsedId || parsedId.length < 3) {
+                throw new Error("Invalid ID format");
+            }
+
+            fetchTicket(parsedId);
+        } catch (err: any) {
+            console.error("Scanner parsing failed:", err);
+            setError("Invalid Swastika Ticket QR Code");
+        }
     };
 
     const fetchTicket = async (docId: string) => {
         setLoading(true);
         try {
-            const docRef = doc(db, 'proshow_passes', docId);
-            const docSnap = await getDoc(docRef);
+            // 1. Try new 'tickets' collection (Direct ID)
+            let docRef = doc(db, 'tickets', docId);
+            let docSnap = await getDoc(docRef);
+
+            if (!docSnap.exists()) {
+                // 1b. Fallback: Search by ticketId field
+                const q = query(collection(db, 'tickets'), where('ticketId', '==', docId));
+                const qSnap = await getDocs(q);
+                if (!qSnap.empty) {
+                    docSnap = qSnap.docs[0];
+                }
+            }
 
             if (docSnap.exists()) {
-                const data = docSnap.data() as TicketBooking;
-                setTicketInfo({ ...data, id: docSnap.id });
+                const data = docSnap.data();
+                setTicketInfo({
+                    ...data,
+                    id: docSnap.id,
+                    _collection: 'tickets'
+                } as any);
+                return;
+            }
+
+            // 2. Try legacy 'proshow_passes' (Direct ID)
+            docRef = doc(db, 'proshow_passes', docId);
+            docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setTicketInfo({
+                    ...data,
+                    id: docSnap.id,
+                    _collection: 'proshow_passes'
+                } as any);
             } else {
-                setError("Ticket not found in database.");
+                setError("Invalid Swastika Ticket QR Code");
             }
         } catch (err: any) {
-            setError("Failed to fetch ticket: " + err.message);
+            console.error("Fetch error:", err);
+            setError("Invalid Swastika Ticket QR Code");
         } finally {
             setLoading(false);
         }
@@ -654,14 +724,31 @@ function TicketScanner() {
 
         setLoading(true);
         try {
-            const docRef = doc(db, 'proshow_passes', ticketInfo.id);
+            // Determine collection from marker or presence of ticketId (new schema has ticketId)
+            const collectionName = (ticketInfo as any)._collection ||
+                ((ticketInfo as any).ticketId ? 'tickets' : 'proshow_passes');
 
-            await setDoc(docRef, {
+            const docRef = doc(db, collectionName, ticketInfo.id);
+
+            // If it's the new 'tickets' collection, we also push a scan record
+            const scanData: any = {
                 admitted: {
                     [scanDay]: increment(admitCount)
                 },
                 [`last_scan_${scanDay}`]: serverTimestamp(),
-            }, { merge: true });
+            };
+
+            // If new schema 'tickets', follow its scans object structure
+            if (collectionName === 'tickets') {
+                const newScan = {
+                    day: scanDay.toUpperCase(),
+                    time: new Date().toISOString(),
+                    gate: 'Main Command'
+                };
+                scanData.scans = (ticketInfo as any).scans ? [...(ticketInfo as any).scans, newScan] : [newScan];
+            }
+
+            await setDoc(docRef, scanData, { merge: true });
 
             setSuccessMsg(`Admitted ${admitCount} for ${scanDay.toUpperCase()}`);
 

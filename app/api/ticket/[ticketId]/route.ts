@@ -43,15 +43,8 @@ export async function GET(
             purchaseId: ticket?.purchaseId,
             type: ticket?.type,
             status: ticket?.status,
-            qrCode: ticket?.qrCode,
-            scans: ticket?.scans || [],
-            allowedDays: ticket?.allowedDays,
-            maxScans: ticket?.maxScans,
-            holderName: ticket?.holderName,
-            holderEmail: ticket?.holderEmail,
-            holderPhone: ticket?.holderPhone,
-            createdAt: ticket?.createdAt,
-            updatedAt: ticket?.updatedAt
+            qrHash: ticket?.qrHash,
+            scans: ticket?.scans || []
         };
 
         return NextResponse.json(response, { status: 200 });

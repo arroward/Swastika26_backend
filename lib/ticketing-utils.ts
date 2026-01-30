@@ -3,31 +3,25 @@ import { TicketType, DayType, TICKET_TYPES } from '@/types/ticketing';
 
 /**
  * Generate a unique Purchase ID
- * Format: PUR_xxxxx (5 random alphanumeric characters)
+ * Format: PUR-SX26-XXXX (4 random uppercase characters)
  */
 export function generatePurchaseId(): string {
-    const randomStr = crypto.randomBytes(3).toString('hex').toUpperCase();
-    return `PUR_${randomStr}`;
+    const randomStr = crypto.randomBytes(2).toString('hex').toUpperCase();
+    return `PUR-SX26-${randomStr}`;
 }
 
 /**
  * Generate a unique Ticket ID
- * Format: TKT_xxxxx (5 random alphanumeric characters)
+ * Format: SW26-[TYPE]-[HASH]
  */
-export function generateTicketId(): string {
-    const randomStr = crypto.randomBytes(3).toString('hex').toUpperCase();
-    return `TKT_${randomStr}`;
-}
-
-/**
- * Generate a unique QR code hash for a ticket
- * Uses SHA256 hash of ticket ID + timestamp + random salt
- */
-export function generateQRCode(ticketId: string): string {
-    const timestamp = Date.now().toString();
-    const salt = crypto.randomBytes(8).toString('hex');
-    const data = `${ticketId}:${timestamp}:${salt}`;
-    return crypto.createHash('sha256').update(data).digest('hex');
+export function generateTicketId(type: TicketType): string {
+    const typeCode = type === 'DAY_1' ? 'D1' : type === 'DAY_2' ? 'D2' : 'CM';
+    const hash = crypto.randomBytes(4).toString('hex').toUpperCase();
+    // Format: SW26-CM-XXXX-XXXX or similar
+    // User example: SW26-CM-XXXX-XXXX
+    const sector1 = hash.substring(0, 4);
+    const sector2 = hash.substring(4, 8);
+    return `SW26-${typeCode}-${sector1}-${sector2}`;
 }
 
 /**

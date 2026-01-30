@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
                             <h1 style="margin: 0; font-family: 'Pirata One', serif; font-size: 42px; color: #ffffff; letter-spacing: 2px; line-height: 1;">
                                 SWASTIKA<span style="color: #ef4444;">.</span>26
                             </h1>
-                            <p style="margin: 8px 0 0; font-size: 10px; text-transform: uppercase; letter-spacing: 4px; color: #666666;">Proshow Access Pass</p>
+                            <p style="margin: 8px 0 0; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #666666;">Click below to view your unique passes. Every pass has its own secure code.</p>
                             
                             <div style="margin-top: 20px;">
                                 <span style="display: inline-block; padding: 8px 16px; border: 1px solid {{TYPE_COLOR}}; background-color: rgba(239, 68, 68, 0.05); color: {{TYPE_COLOR}}; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 4px; letter-spacing: 1px;">
@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
             .replace('{{TICKET_DETAILS_HTML}}', ticketDescriptionHtml)
             .replace('{{TOTAL_AMOUNT}}', totalAmount.toString())
             .replace('{{QR_URL}}', qrUrl)
-            .replace('{{TICKET_VIEW_URL}}', `${SITE_CONFIG.baseUrl}/ticket/view/${docId}`)
+            .replace('{{TICKET_VIEW_URL}}', `${SITE_CONFIG.baseUrl}/wallet/${docId}`)
             .replace('{{BOOKING_ID}}', docId)
             .replace('{{TRANSACTION_ID}}', transactionId);
 

@@ -1,58 +1,33 @@
 // Swastika 2026 Ticketing System Types
 
-export type PaymentStatus = "PENDING" | "COMPLETED" | "FAILED";
-export type PurchaseStatus = "ACTIVE" | "CANCELLED";
-export type TicketType = "DAY_1" | "DAY_2" | "BOTH_DAYS";
-export type TicketStatus = "ACTIVE" | "USED" | "CANCELLED" | "TRANSFERRED";
+export type PurchaseStatus = "COMPLETED" | "PENDING";
+export type TicketStatus = "ACTIVE" | "USED";
+export type TicketType = "DAY_1" | "DAY_2" | "COMBO";
 export type DayType = "DAY_1" | "DAY_2";
 
 export interface Purchase {
-    purchaseId: string;           // Primary key: "PUR_xxxxx"
-    email: string;                // Buyer email
-    phone: string;                // Buyer phone
-    name: string;                 // Buyer name
-    totalAmount: number;          // Total paid amount
-    paymentStatus: PaymentStatus;
-    paymentId: string;            // Razorpay/payment gateway ID
-    tickets: string[];            // Array of ticket IDs
-    purchaseDate: Date;           // Purchase timestamp
+    purchaseId: string;           // Primary key: "PUR-SX26-XXXX"
+    buyerName: string;
+    buyerEmail: string;
+    buyerPhone: string;
+    totalAmount: number;
+    purchaseDate: Date | any;     // Using any for Firestore Timestamp support
     status: PurchaseStatus;
 }
 
 export interface ScanRecord {
     day: DayType;
-    timestamp: Date;
-    scannedBy: string;            // Scanner user ID
-    location: string;             // Gate/entrance name
-    deviceId: string;             // Scanner device ID
+    timestamp: Date | any;
+    gate: string;
 }
 
 export interface Ticket {
-    ticketId: string;             // Primary key: "TKT_xxxxx"
-    purchaseId: string;           // Foreign key to purchase
+    ticketId: string;             // SW26-[TYPE]-[HASH]
+    purchaseId: string;           // Links to the purchase record
     type: TicketType;
-
-    // Ticket holder (optional, can be different from buyer)
-    holderName?: string;
-    holderEmail?: string;
-    holderPhone?: string;
-
-    // QR Code
-    qrCode: string;               // Unique hash for QR
-
-    // Scan tracking
-    scans: ScanRecord[];
-
-    // Configuration
-    allowedDays: DayType[];
-    maxScans: number;             // 1 for single day, 2 for both days
-
-    // Status
+    qrHash: string;               // Exact same as ticketId
     status: TicketStatus;
-
-    // Metadata
-    createdAt: Date;
-    updatedAt: Date;
+    scans: ScanRecord[];
 }
 
 export interface TicketTypeConfig {
@@ -70,7 +45,7 @@ export const TICKET_TYPES: Record<TicketType, TicketTypeConfig> = {
         id: "DAY_1",
         label: "Day 1 Pass",
         price: 50,
-        date: "February 14, 2026",
+        date: "February 21, 2026",
         allowedDays: ["DAY_1"],
         maxScans: 1,
         color: "blue"
@@ -79,16 +54,16 @@ export const TICKET_TYPES: Record<TicketType, TicketTypeConfig> = {
         id: "DAY_2",
         label: "Day 2 Pass",
         price: 60,
-        date: "February 15, 2026",
+        date: "February 22, 2026",
         allowedDays: ["DAY_2"],
         maxScans: 1,
         color: "purple"
     },
-    BOTH_DAYS: {
-        id: "BOTH_DAYS",
-        label: "Both Days Pass",
+    COMBO: {
+        id: "COMBO",
+        label: "Combo Pass",
         price: 110,
-        date: "Feb 14-15, 2026",
+        date: "Feb 21-22, 2026",
         allowedDays: ["DAY_1", "DAY_2"],
         maxScans: 2,
         color: "red"
@@ -119,6 +94,14 @@ export interface CreatePurchaseResponse {
 
 export interface VerifyPurchaseRequest {
     purchaseId: string;
+    buyerName: string;
+    buyerEmail: string;
+    buyerPhone: string;
+    totalAmount: number;
+    tickets: {
+        type: TicketType;
+        quantity: number;
+    }[];
     paymentId: string;
     signature: string;
 }
@@ -126,7 +109,7 @@ export interface VerifyPurchaseRequest {
 export interface VerifyPurchaseResponse {
     success: boolean;
     purchaseId: string;
-    status: PaymentStatus;
+    status: PurchaseStatus;
     sendEmail: boolean;
 }
 

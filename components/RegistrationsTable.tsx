@@ -171,101 +171,18 @@ export default function RegistrationsTable({
                 <td className="px-6 py-4 text-gray-200">
                   {reg.uploadFileUrl ? (
                     <div className="flex items-center gap-2">
-                      <button
-                        className="text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer transition-colors"
-                        onClick={async (e) => {
-                          e.preventDefault();
-
-                          try {
-                            // Use the download API route to fetch the file
-                            const downloadUrl = `/api/admin/download-file?url=${encodeURIComponent(reg.uploadFileUrl)}`;
-                            // Open in new tab for viewing
-                            window.open(downloadUrl, "_blank");
-                          } catch (error) {
-                            console.error("View error:", error);
-                            alert(
-                              "Failed to open file. Please check if the file exists.",
-                            );
-                          }
-                        }}
+                      <a
+                        href={reg.uploadFileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors hover:underline"
                       >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                         View
-                      </button>
-                      <button
-                        className="text-green-400 hover:text-green-300 flex items-center gap-1 cursor-pointer transition-colors"
-                        onClick={async (e) => {
-                          e.preventDefault();
-
-                          try {
-                            // Use API route to download file (handles R2 access and CORS)
-                            const downloadUrl = `/api/admin/download-file?url=${encodeURIComponent(reg.uploadFileUrl)}`;
-                            const response = await fetch(downloadUrl);
-
-                            if (response.ok) {
-                              const blob = await response.blob();
-                              const url = window.URL.createObjectURL(blob);
-                              const link = document.createElement("a");
-                              link.href = url;
-
-                              // Get file extension from URL or use default
-                              const extension =
-                                reg.uploadFileUrl
-                                  .split(".")
-                                  .pop()
-                                  ?.split("?")[0] || "file";
-                              link.download = `payment_proof_${reg.fullName.replace(/\s+/g, "_")}.${extension}`;
-
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                              window.URL.revokeObjectURL(url);
-                            } else {
-                              alert(
-                                "Failed to download file. Please try again.",
-                              );
-                            }
-                          } catch (error) {
-                            console.error("Download error:", error);
-                            alert(
-                              "Failed to download file. Please check if the file exists.",
-                            );
-                          }
-                        }}
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                          />
-                        </svg>
-                        Download
-                      </button>
+                      </a>
                     </div>
                   ) : (
                     <span className="text-gray-500">-</span>

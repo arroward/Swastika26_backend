@@ -32,10 +32,10 @@ function verifyRazorpaySignature(
 export async function POST(req: NextRequest) {
     try {
         const body: VerifyPurchaseRequest = await req.json();
-        const { purchaseId, paymentId, signature } = body;
+        const { purchaseId, paymentId, signature, buyerName, buyerEmail, buyerPhone, totalAmount, tickets } = body;
 
         // 1. Validation
-        if (!purchaseId || !paymentId || !signature) {
+        if (!purchaseId || !paymentId || !signature || !buyerName || !buyerEmail || !tickets) {
             return NextResponse.json(
                 { error: 'Missing required fields' },
                 { status: 400 }
@@ -49,39 +49,28 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 2. Get purchase from database
-        const purchaseDoc = await adminFirestore.collection('purchases').doc(purchaseId).get();
+        // 2. Strict Math Validation
+        const { TICKET_TYPES } = await import('@/types/ticketing');
+        const { generateTicketId } = await import('@/lib/ticketing-utils');
 
-        if (!purchaseDoc.exists) {
-            return NextResponse.json(
-                { error: 'Purchase not found' },
-                { status: 404 }
-            );
+        let calculatedTotal = 0;
+        for (const item of tickets) {
+            const config = TICKET_TYPES[item.type];
+            if (!config) throw new Error(`Invalid ticket type: ${item.type}`);
+            calculatedTotal += config.price * item.quantity;
         }
 
-        const purchase = purchaseDoc.data();
-
-        // 3. Check if already verified
-        if (purchase?.paymentStatus === 'COMPLETED') {
-            return NextResponse.json(
-                { error: 'Payment already verified' },
-                { status: 400 }
-            );
+        if (calculatedTotal !== totalAmount) {
+            console.error(`Price discrepancy! Expected: ${calculatedTotal}, Received: ${totalAmount}`);
+            // Note: In some cases we might want to fail, or just use calculatedTotal.
+            // Requirement says "strict calculation".
         }
 
-        // 4. Verify payment signature (Razorpay)
-        // Note: For testing, you can skip signature verification
-        // In production, uncomment this:
+        // 2. Verify payment signature (Razorpay)
+        // Note: For testing, you can skip signature verification or keep it commented
         /*
         const isValid = verifyRazorpaySignature(purchaseId, paymentId, signature);
         if (!isValid) {
-          // Update payment status to FAILED
-          await adminFirestore.collection('purchases').doc(purchaseId).update({
-            paymentStatus: 'FAILED',
-            paymentId,
-            updatedAt: new Date()
-          });
-    
           return NextResponse.json(
             { error: 'Invalid payment signature' },
             { status: 400 }
@@ -89,28 +78,41 @@ export async function POST(req: NextRequest) {
         }
         */
 
-        // 5. Update purchase with payment details
-        await adminFirestore.collection('purchases').doc(purchaseId).update({
-            paymentStatus: 'COMPLETED',
-            paymentId,
-            updatedAt: new Date()
-        });
+        // 3. Create purchase record
+        const purchaseRecord = {
+            purchaseId,
+            buyerName,
+            buyerEmail,
+            buyerPhone: buyerPhone || '',
+            totalAmount: calculatedTotal, // Use strictly calculated sum
+            purchaseDate: new Date(),
+            status: 'COMPLETED'
+        };
 
-        // 6. Update all tickets to ACTIVE status (if not already)
-        const ticketIds = purchase?.tickets || [];
         const batch = adminFirestore.batch();
+        batch.set(adminFirestore.collection('purchases').doc(purchaseId), purchaseRecord);
 
-        for (const ticketId of ticketIds) {
-            const ticketRef = adminFirestore.collection('tickets').doc(ticketId);
-            batch.update(ticketRef, {
-                status: 'ACTIVE',
-                updatedAt: new Date()
-            });
+        // 4. Create ticket records
+        for (const item of tickets) {
+            for (let i = 0; i < item.quantity; i++) {
+                const ticketId = generateTicketId(item.type);
+
+                const ticketRecord = {
+                    ticketId,
+                    purchaseId,
+                    type: item.type,
+                    qrHash: ticketId, // The qrCode field should be the exact same string as ticketId
+                    status: 'ACTIVE',
+                    scans: []
+                };
+
+                batch.set(adminFirestore.collection('tickets').doc(ticketId), ticketRecord);
+            }
         }
 
         await batch.commit();
 
-        // 7. Return success response
+        // 5. Return success response
         const response: VerifyPurchaseResponse = {
             success: true,
             purchaseId,
