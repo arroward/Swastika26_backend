@@ -40,7 +40,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch("/api/events");
+      const response = await fetch("/api/admin/events");
       const data = await response.json();
       setEvents(data);
     } catch (error) {
@@ -101,7 +101,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
     try {
       if (isCreating) {
         // Create new event
-        const response = await fetch("/api/events", {
+        const response = await fetch("/api/admin/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
@@ -114,7 +114,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
         }
       } else if (editingEvent) {
         // Update existing event
-        const response = await fetch(`/api/events/${editingEvent.id}`, {
+        const response = await fetch(`/api/admin/events/${editingEvent.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
@@ -148,7 +148,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/events/${eventId}`, {
+      const response = await fetch(`/api/admin/events/${eventId}`, {
         method: "DELETE",
       });
 
@@ -168,315 +168,325 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg overflow-hidden">
-      <div className="p-6 border-b border-gray-700 flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-white">Event Management</h2>
-          <p className="text-gray-400 mt-1">Create, edit, and manage events</p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition flex items-center gap-2"
-          disabled={loading}
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Add New Event
-        </button>
-      </div>
-
-      {error && (
-        <div className="mx-6 mt-6 p-4 bg-red-900 border border-red-700 text-red-200 rounded">
-          {error}
-        </div>
-      )}
-
-      {events.length === 0 ? (
-        <div className="p-12 text-center text-gray-400">
-          <p className="text-lg mb-4">No events found</p>
+    <>
+      <div className="bg-white/5 rounded-3xl border border-white/10 backdrop-blur-sm overflow-hidden">
+        <div className="p-8 border-b border-white/10 flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-syne font-bold text-white mb-2">Event Management</h2>
+            <p className="text-white/50 text-sm">Create, edit, and manage events</p>
+          </div>
           <button
             onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition"
+            className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-red-900/20 font-syne uppercase tracking-wider text-sm"
+            disabled={loading}
           >
-            Create First Event
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Add New Event
           </button>
         </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Event
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Capacity
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Registered
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-700">
-              {events.map((event) => (
-                <tr key={event.id} className="hover:bg-gray-750">
-                  <td className="px-6 py-4">
-                    <div className="flex items-start gap-3">
-                      {event.imageUrl && (
-                        <img
-                          src={event.imageUrl}
-                          alt={event.title}
-                          className="w-12 h-12 rounded object-cover"
-                        />
-                      )}
-                      <div>
-                        <div className="text-sm font-medium text-white">
-                          {event.title}
-                        </div>
-                        <div className="text-xs text-gray-400 line-clamp-1">
-                          {event.description}
+
+        {error && (
+          <div className="mx-8 mt-6 p-4 bg-red-500/10 border border-red-500/20 text-red-200 rounded-xl">
+            <span className="font-mono text-sm">{error}</span>
+          </div>
+        )}
+
+        {events.length === 0 ? (
+          <div className="p-12 text-center text-white/50">
+            <p className="text-lg mb-4 font-mono">No events found</p>
+            <button
+              onClick={handleCreate}
+              className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-semibold py-2 px-6 rounded-xl transition-all shadow-lg shadow-red-900/20"
+            >
+              Create First Event
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-black/20 border-b border-white/10">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
+                    Event
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
+                    Capacity
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
+                    Registered
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {events.map((event) => (
+                  <tr key={event.id} className="hover:bg-white/5 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-start gap-3">
+                        {event.imageUrl && (
+                          <img
+                            src={event.imageUrl}
+                            alt={event.title}
+                            className="w-12 h-12 rounded-xl object-cover border border-white/10"
+                          />
+                        )}
+                        <div>
+                          <div className="text-sm font-semibold text-white">
+                            {event.title}
+                          </div>
+                          <div className="text-xs text-white/50 line-clamp-1">
+                            {event.description}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className="px-2 py-1 bg-blue-900 text-blue-200 rounded text-xs">
-                      {event.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-300">
-                    {new Date(event.date).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-300">
-                    {event.location}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-300">
-                    {event.capacity}
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <span
-                      className={`font-medium ${
-                        event.registeredCount >= event.capacity
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-mono border border-blue-500/30">
+                        {event.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white/70 font-mono">
+                      {new Date(event.date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white/70">
+                      {event.location}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-white/70 font-mono">
+                      {event.capacity}
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span
+                        className={`font-medium font-mono ${event.registeredCount >= event.capacity
                           ? "text-red-400"
                           : event.registeredCount >= event.capacity * 0.8
                             ? "text-yellow-400"
                             : "text-green-400"
-                      }`}
-                    >
-                      {event.registeredCount}
-                    </span>
-                    <span className="text-gray-500"> / {event.capacity}</span>
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <button
-                      onClick={() => handleEdit(event)}
-                      className="text-blue-400 hover:text-blue-300 mr-4"
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(event.id, event.title)}
-                      className="text-red-400 hover:text-red-300"
-                      disabled={loading}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+                          }`}
+                      >
+                        {event.registeredCount}
+                      </span>
+                      <span className="text-white/30"> / {event.capacity}</span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        onClick={() => handleEdit(event)}
+                        className="text-blue-400 hover:text-blue-300 mr-4 font-mono transition-colors"
+                        disabled={loading}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(event.id, event.title)}
+                        className="text-red-400 hover:text-red-300 font-mono transition-colors"
+                        disabled={loading}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Create/Edit Modal */}
-      {(editingEvent || isCreating) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto mx-4">
-            <h3 className="text-xl font-bold text-white mb-4">
-              {isCreating
-                ? "Create New Event"
-                : `Edit Event: ${editingEvent?.title}`}
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Event Title *
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
+      {
+        (editingEvent || isCreating) && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
+            <div className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-2xl mx-auto shadow-2xl flex flex-col" style={{ height: 'calc(100vh - 2rem)', maxHeight: '900px' }}>
+              {/* Fixed Header */}
+              <div className="p-8 border-b border-white/10 flex-shrink-0">
+                <h3 className="text-2xl font-syne font-bold text-white">
+                  {isCreating
+                    ? "Create New Event"
+                    : `Edit Event: ${editingEvent?.title}`}
+                </h3>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Description *
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  rows={4}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
+              <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
+                  <div>
+                    <label className="block text-xs font-mono text-white/50 mb-2 uppercase tracking-wider">
+                      Event Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
+                      className="w-full px-4 py-3 bg-black/40 border border-white/10 text-white rounded-xl focus:outline-none focus:border-red-500 transition-all"
+                      required
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, date: e.target.value })
-                    }
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <div>
+                    <label className="block text-xs font-mono text-white/50 mb-2 uppercase tracking-wider">
+                      Description *
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({ ...formData, description: e.target.value })
+                      }
+                      rows={4}
+                      className="w-full px-4 py-3 bg-black/40 border border-white/10 text-white rounded-xl focus:outline-none focus:border-red-500 transition-all resize-none"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono text-white/50 mb-2 uppercase tracking-wider">
+                        Date *
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) =>
+                          setFormData({ ...formData, date: e.target.value })
+                        }
+                        className="w-full px-4 py-3 bg-black/40 border border-white/10 text-white rounded-xl focus:outline-none focus:border-red-500 transition-all"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-mono text-white/50 mb-2 uppercase tracking-wider">
+                        Category *
+                      </label>
+                      <select
+                        value={formData.category}
+                        onChange={(e) =>
+                          setFormData({ ...formData, category: e.target.value })
+                        }
+                        className="w-full px-4 py-3 bg-black/40 border border-white/10 text-white rounded-xl focus:outline-none focus:border-red-500 transition-all"
+                        required
+                      >
+                        <option value="">Select category</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Cultural">Cultural</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Workshop">Workshop</option>
+                        <option value="Competition">Competition</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-white/50 mb-2 uppercase tracking-wider">
+                      Location *
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={(e) =>
+                        setFormData({ ...formData, location: e.target.value })
+                      }
+                      className="w-full px-4 py-3 bg-black/40 border border-white/10 text-white rounded-xl focus:outline-none focus:border-red-500 transition-all"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-white/50 mb-2 uppercase tracking-wider">
+                      Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.imageUrl}
+                      onChange={(e) =>
+                        setFormData({ ...formData, imageUrl: e.target.value })
+                      }
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full px-4 py-3 bg-black/40 border border-white/10 text-white rounded-xl focus:outline-none focus:border-red-500 transition-all placeholder-white/20"
+                    />
+                    <p className="text-xs text-white/40 mt-2 font-mono">
+                      Enter a URL for the event image
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-mono text-white/50 mb-2 uppercase tracking-wider">
+                      Capacity *
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.capacity}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          capacity: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      min="1"
+                      className="w-full px-4 py-3 bg-black/40 border border-white/10 text-white rounded-xl focus:outline-none focus:border-red-500 transition-all"
+                      required
+                    />
+                    <p className="text-xs text-white/40 mt-2 font-mono">
+                      Maximum number of participants
+                    </p>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Category *
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) =>
-                      setFormData({ ...formData, category: e.target.value })
-                    }
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                {/* Sticky Footer with Buttons */}
+                <div className="flex gap-3 p-8 border-t border-white/10 flex-shrink-0 bg-[#111]">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-xl transition-all font-syne uppercase tracking-widest shadow-lg shadow-red-900/20"
                   >
-                    <option value="">Select category</option>
-                    <option value="Technical">Technical</option>
-                    <option value="Cultural">Cultural</option>
-                    <option value="Sports">Sports</option>
-                    <option value="Workshop">Workshop</option>
-                    <option value="Competition">Competition</option>
-                    <option value="Other">Other</option>
-                  </select>
+                    {loading
+                      ? "Processing..."
+                      : isCreating
+                        ? "Create Event"
+                        : "Update Event"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={loading}
+                    className="flex-1 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-4 px-4 rounded-xl transition-all border border-white/10"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Location *
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Image URL
-                </label>
-                <input
-                  type="url"
-                  value={formData.imageUrl}
-                  onChange={(e) =>
-                    setFormData({ ...formData, imageUrl: e.target.value })
-                  }
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Enter a URL for the event image
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Capacity *
-                </label>
-                <input
-                  type="number"
-                  value={formData.capacity}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      capacity: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  min="1"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Maximum number of participants
-                </p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold py-2 px-4 rounded transition"
-                >
-                  {loading
-                    ? "Processing..."
-                    : isCreating
-                      ? "Create Event"
-                      : "Update Event"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={loading}
-                  className="flex-1 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 text-white font-semibold py-2 px-4 rounded transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </>
   );
 }

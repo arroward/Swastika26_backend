@@ -44,7 +44,7 @@ export default function RegistrationsTable({
   return (
     <div className="bg-gray-800 rounded-lg overflow-hidden">
       {/* Header with title and download buttons */}
-      <div className="p-6 border-b border-gray-700 flex justify-between items-center flex-wrap gap-4">
+      <div className="p-4 sm:p-6 border-b border-gray-700 flex justify-between items-center flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold text-white">
             {eventTitle ? `${eventTitle} - Registrations` : "All Registrations"}

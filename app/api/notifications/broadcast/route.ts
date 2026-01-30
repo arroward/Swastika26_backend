@@ -90,7 +90,10 @@ export async function POST(request: Request) {
                         const error = resp.error;
                         errors.push({
                             token: chunkTokens[idx].substring(0, 10) + '...',
-                            error: error
+                            error: error ? {
+                                code: error.code || 'unknown',
+                                message: error.message || 'Unknown error'
+                            } : 'Unknown error'
                         });
 
                         // Identify invalid tokens for cleanup

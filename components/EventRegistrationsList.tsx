@@ -40,7 +40,7 @@ export default function EventRegistrationsList({
     setError(null);
     try {
       console.log("Fetching registrations for event:", eventId);
-      const response = await fetch(`/api/events/${eventId}/registrations`);
+      const response = await fetch(`/api/admin/registrations?eventId=${eventId}&role=event_coordinator`);
       const data = await response.json();
 
       console.log("API response:", data);
@@ -222,7 +222,7 @@ export default function EventRegistrationsList({
               </td>
               <td className="py-3 px-4 text-gray-300">
                 {registration.uploadFileUrl &&
-                registration.uploadFileUrl.length > 0 ? (
+                  registration.uploadFileUrl.length > 0 ? (
                   <div className="flex items-center gap-2">
                     <button
                       className="text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer transition-colors text-sm"

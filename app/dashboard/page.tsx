@@ -1,194 +1,153 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import AdminHeader from "@/components/AdminHeader";
-import EventSelect from "@/components/EventSelect";
-import RegistrationsTable from "@/components/RegistrationsTable";
-import AdminManagement from "@/components/AdminManagement";
-import EventManagement from "@/components/EventManagement";
-import NotificationManagement from "@/components/NotificationManagement";
-import EventRegistrationsList from "@/components/EventRegistrationsList";
-import { Event } from "@/types/event";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import LoggerPage from "@/app/admin/logger/page";
+import React, { useState, useEffect } from 'react';
+import UnifiedTicketManagement from '@/components/UnifiedTicketManagement';
+import EventManagement from '@/components/EventManagement';
+import NotificationManagement from '@/components/NotificationManagement';
+import AdminManagement from '@/components/AdminManagement';
+import RegistrationsManagement from '@/components/RegistrationsManagement';
+import { Calendar, Bell, Users, CheckCircle, LogOut, ClipboardList, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-interface AdminInfo {
+type TabType = 'registrations' | 'events' | 'notifications' | 'admins' | 'verify';
+
+interface Admin {
   id: string;
   email: string;
+  role: 'superadmin' | 'event_coordinator';
   name: string;
-  role: "superadmin" | "event_coordinator";
+  createdAt: string;
+  eventIds?: string[];
 }
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [admin, setAdmin] = useState<AdminInfo | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [registrations, setRegistrations] = useState([]);
-  const [admins, setAdmins] = useState([]);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingData, setIsLoadingData] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "registrations" | "admins" | "events" | "notifications" | "logger"
-  >("registrations");
+  const [activeTab, setActiveTab] = useState<TabType>('registrations');
+  const [admin, setAdmin] = useState<Admin | null>(null);
+  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
-  // Load admin info from localStorage
   useEffect(() => {
-    const verifySession = async () => {
-      try {
-        // Check localStorage first for quick loading
-        const adminData = localStorage.getItem("admin");
-        if (!adminData) {
-          router.push("/login");
-          return;
-        }
+    validateSession();
+  }, []);
 
-        // Verify session with server
-        const response = await fetch("/api/admin/session");
-        const data = await response.json();
-
-        if (!data.authenticated) {
-          // Session expired or invalid, clear localStorage and redirect
-          localStorage.removeItem("admin");
-          router.push("/login");
-          return;
-        }
-
-        const parsedAdmin = JSON.parse(adminData) as AdminInfo;
-        setAdmin(parsedAdmin);
-        setIsLoading(false);
-
-        // Fetch events
-        fetchEvents(parsedAdmin);
-      } catch (error) {
-        console.error("Session verification error:", error);
-        localStorage.removeItem("admin");
-        router.push("/login");
-      }
-    };
-
-    verifySession();
-  }, [router]);
-
-  // Fetch admins when switching to admins tab
-  useEffect(() => {
-    if (activeTab === "admins" && admin?.role === "superadmin") {
-      fetchAdmins();
-    }
-  }, [activeTab, admin]);
-
-  const fetchEvents = async (adminData: AdminInfo) => {
+  const validateSession = async () => {
     try {
-      console.log("Fetching events for:", adminData.email, adminData.role);
-      const response = await fetch(`/api/admin/events?role=${adminData.role}`);
-      const data = await response.json();
-      console.log("Events API response:", data);
+      setLoading(true);
+      setSessionError(null);
 
-      if (data.success) {
-        console.log("Setting events:", data.data.length);
-        setEvents(data.data);
+      // First check localStorage for quick UI update
+      const adminData = localStorage.getItem('admin');
+      if (adminData) {
+        const parsedAdmin = JSON.parse(adminData);
+        setAdmin(parsedAdmin);
+      }
+
+      // Validate session with server
+      const response = await fetch('/api/admin/session');
+
+      if (!response.ok) {
+        throw new Error('Session expired');
+      }
+
+      const data = await response.json();
+
+      if (!data.authenticated) {
+        throw new Error('Not authenticated');
+      }
+
+      // Update admin data from server
+      setAdmin(data.admin);
+      localStorage.setItem('admin', JSON.stringify(data.admin));
+
+      // Fetch admins if superadmin
+      if (data.admin.role === 'superadmin') {
+        await fetchAdmins();
       } else {
-        console.error("Failed to fetch events:", data.error);
+        setLoading(false);
       }
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.error('Session validation error:', error);
+      setSessionError(error instanceof Error ? error.message : 'Session validation failed');
+      localStorage.removeItem('admin');
+
+      // Redirect to login after a brief delay to show error
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
     }
   };
 
   const fetchAdmins = async () => {
     try {
-      const response = await fetch("/api/admin/manage");
-      const data = await response.json();
-      console.log("Fetched admins data:", data);
-      if (data.success) {
-        console.log("Setting admins:", data.data);
-        setAdmins(data.data);
-      } else {
-        console.error("Failed to fetch admins:", data.error);
-      }
-    } catch (error) {
-      console.error("Error fetching admins:", error);
-    }
-  };
-
-  const fetchRegistrations = async (eventId?: string) => {
-    if (!admin) return;
-
-    setIsLoadingData(true);
-    try {
-      const url = new URL("/api/admin/registrations", window.location.origin);
-      url.searchParams.set("role", admin.role);
-
-      if (admin.role === "event_coordinator" && eventId) {
-        url.searchParams.set("eventId", eventId);
-      }
-
-      const response = await fetch(url.toString());
-      const data = await response.json();
-
-      if (data.success) {
-        setRegistrations(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching registrations:", error);
-    } finally {
-      setIsLoadingData(false);
-    }
-  };
-
-  const handleEventSelect = (eventId: string) => {
-    setSelectedEventId(eventId);
-    fetchRegistrations(eventId);
-  };
-
-  const handleDownload = async (format: "csv" | "pdf") => {
-    if (!admin) return;
-
-    try {
-      const url = new URL("/api/admin/download", window.location.origin);
-      url.searchParams.set("role", admin.role);
-      url.searchParams.set("format", format);
-
-      const response = await fetch(url.toString());
+      const response = await fetch('/api/admin/manage');
 
       if (!response.ok) {
-        throw new Error("Download failed");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
+      const text = await response.text();
 
-      const filename =
-        admin.role === "superadmin"
-          ? `all_registrations_${new Date().toISOString().split("T")[0]}`
-          : `registrations_${new Date().toISOString().split("T")[0]}`;
+      // Try to parse JSON
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Response text:', text);
+        setAdmins([]);
+        setLoading(false);
+        return;
+      }
 
-      link.setAttribute("download", `${filename}.${format}`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
+      if (data.success) {
+        // Handle both response formats: {success, admins} or {success, data}
+        const adminsData = data.admins || data.data;
+        if (Array.isArray(adminsData)) {
+          setAdmins(adminsData);
+        } else {
+          console.error('Invalid response format:', data);
+          setAdmins([]);
+        }
+      } else {
+        console.error('API returned success: false', data);
+        setAdmins([]);
+      }
     } catch (error) {
-      console.error("Error downloading:", error);
-      alert("Failed to download registrations");
+      console.error('Error fetching admins:', error);
+      setAdmins([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/admin/logout", { method: "POST" });
-      localStorage.removeItem("admin");
-      router.push("/login");
+      // Call logout API to clear server session
+      await fetch('/api/admin/logout', { method: 'POST' });
     } catch (error) {
-      console.error("Error logging out:", error);
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('admin');
+      router.push('/login');
     }
   };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-400 text-lg">
+            {sessionError ? sessionError : 'Loading dashboard...'}
+          </p>
+          {sessionError && (
+            <p className="text-gray-500 text-sm mt-2">Redirecting to login...</p>
+          )}
+        </div>
+      </div>
+    );
   }
 
   if (!admin) {
@@ -196,201 +155,128 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      <AdminHeader
-        adminName={admin.name}
-        adminRole={admin.role}
-        onLogout={handleLogout}
-      />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Super Admin View */}
-        {admin.role === "superadmin" && (
-          <div className="space-y-8">
-            <div className="bg-blue-900 border border-blue-700 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-blue-100 mb-2">
-                Super Admin Access
-              </h2>
-              <p className="text-blue-200">
-                Total Students Registered:{" "}
-                <span className="font-bold text-blue-100">
-                  {events.reduce(
-                    (sum, event) => sum + event.registeredCount,
-                    0,
-                  )}
-                </span>{" "}
-                | Events:{" "}
-                <span className="font-bold text-blue-100">{events.length}</span>{" "}
-                | Admins:{" "}
-                <span className="font-bold text-blue-100">{admins.length}</span>
-              </p>
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      {/* Header */}
+      <div className="bg-black/40 border-b border-white/10 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-syne font-bold tracking-tight">Swastika '26</h1>
+              <p className="text-xs font-mono text-white/50 uppercase tracking-widest mt-1">Admin Dashboard</p>
             </div>
-
-            {/* Tab Navigation */}
-            <div className="flex gap-4 border-b border-gray-700">
+            <div className="flex items-center gap-4">
+              <div className="text-sm">
+                <div className="text-white/50 text-xs font-mono">Welcome,</div>
+                <div className="font-syne font-semibold">{admin.name}</div>
+              </div>
               <button
-                onClick={() => setActiveTab("registrations")}
-                className={`pb-4 px-4 font-semibold transition ${activeTab === "registrations"
-                    ? "text-blue-400 border-b-2 border-blue-400"
-                    : "text-gray-400 hover:text-gray-300"
-                  }`}
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-medium transition-all shadow-lg shadow-red-900/20"
               >
-                Registrations{" "}
-                {registrations.length > 0 && `(${registrations.length})`}
-              </button>
-              <button
-                onClick={() => setActiveTab("events")}
-                className={`pb-4 px-4 font-semibold transition ${activeTab === "events"
-                    ? "text-blue-400 border-b-2 border-blue-400"
-                    : "text-gray-400 hover:text-gray-300"
-                  }`}
-              >
-                Events
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("admins");
-                  fetchAdmins();
-                }}
-                className={`pb-4 px-4 font-semibold transition ${activeTab === "admins"
-                    ? "text-blue-400 border-b-2 border-blue-400"
-                    : "text-gray-400 hover:text-gray-300"
-                  }`}
-              >
-                Manage Admins
-              </button>
-              <button
-                onClick={() => setActiveTab("notifications")}
-                className={`pb-4 px-4 font-semibold transition ${activeTab === "notifications"
-                    ? "text-blue-400 border-b-2 border-blue-400"
-                    : "text-gray-400 hover:text-gray-300"
-                  }`}
-              >
-                Notifications
-              </button>
-              <button
-                onClick={() => setActiveTab("logger")}
-                className={`pb-4 px-4 font-semibold transition ${activeTab === "logger"
-                    ? "text-blue-400 border-b-2 border-blue-400"
-                    : "text-gray-400 hover:text-gray-300"
-                  }`}
-              >
-                Logger
+                <LogOut className="w-4 h-4" />
+                Logout
               </button>
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Registrations Tab */}
-            {activeTab === "registrations" && (
-              <>
-                <button
-                  onClick={() => {
-                    setSelectedEventId(null);
-                    fetchRegistrations();
-                  }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded transition duration-200"
-                >
-                  View All Registrations
-                </button>
-
-                {registrations.length > 0 && (
-                  <RegistrationsTable
-                    registrations={registrations}
-                    isLoading={isLoadingData}
-                    onDownload={handleDownload}
-                  />
-                )}
-              </>
-            )}
-
-            {/* Events Tab */}
-            {activeTab === "events" && (
-              <EventManagement
-                onUpdate={() => {
-                  if (admin) {
-                    fetchEvents(admin);
-                  }
-                }}
+      {/* Navigation Tabs */}
+      <div className="bg-black/20 border-b border-white/10 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex gap-1 overflow-x-auto">
+            <TabButton
+              active={activeTab === 'registrations'}
+              onClick={() => setActiveTab('registrations')}
+              icon={<ClipboardList className="w-4 h-4" />}
+              label="Registrations"
+            />
+            {/* Events - Superadmin Only */}
+            {admin.role === 'superadmin' && (
+              <TabButton
+                active={activeTab === 'events'}
+                onClick={() => setActiveTab('events')}
+                icon={<Calendar className="w-4 h-4" />}
+                label="Events"
               />
             )}
-
-            {/* Admins Tab */}
-            {activeTab === "admins" && (
-              <AdminManagement
-                admins={admins}
-                currentAdminId={admin.id}
-                onUpdate={fetchAdmins}
+            {/* Notifications - Superadmin Only */}
+            {admin.role === 'superadmin' && (
+              <TabButton
+                active={activeTab === 'notifications'}
+                onClick={() => setActiveTab('notifications')}
+                icon={<Bell className="w-4 h-4" />}
+                label="Notifications"
               />
             )}
-
-            {/* Notifications Tab */}
-            {activeTab === "notifications" && <NotificationManagement />}
-
-            {/* Logger Tab */}
-            {activeTab === "logger" && (
-              <div className="-m-8">
-                {/* Negative margin to counteract dashboard padding since LoggerPage has its own layout */}
-                <LoggerPage />
-              </div>
+            {/* Admin Management - Superadmin Only */}
+            {admin.role === 'superadmin' && (
+              <TabButton
+                active={activeTab === 'admins'}
+                onClick={() => setActiveTab('admins')}
+                icon={<Users className="w-4 h-4" />}
+                label="Admin Management"
+              />
             )}
+            {/* Ticket Verification - Last Tab */}
+            <TabButton
+              active={activeTab === 'verify'}
+              onClick={() => setActiveTab('verify')}
+              icon={<CheckCircle className="w-4 h-4" />}
+              label="Ticket Verification"
+            />
           </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {activeTab === 'verify' && <UnifiedTicketManagement />}
+        {activeTab === 'registrations' && (
+          <RegistrationsManagement
+            adminId={admin.id}
+            role={admin.role}
+          />
         )}
-
-        {/* Event Coordinator View */}
-        {admin.role === "event_coordinator" && (
-          <div className="space-y-8">
-            <div className="bg-green-900 border border-green-700 rounded-lg p-6">
-              <h2 className="text-xl font-bold text-green-100 mb-2">
-                Event Coordinator Access
-              </h2>
-              <p className="text-green-200">
-                You manage {events.length} event{events.length !== 1 ? "s" : ""}
-                . View registered students below.
-              </p>
-            </div>
-
-            {/* Show all events in cards */}
-            {events.length > 0 && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-300">
-                  Your Assigned Events
-                </h3>
-                {events.map((event) => (
-                  <div
-                    key={event.id}
-                    className="bg-gray-800 border border-gray-700 rounded-lg p-6"
-                  >
-                    <div className="mb-4">
-                      <h3 className="text-xl font-bold text-white">
-                        {event.title}
-                      </h3>
-                      <p className="text-gray-400 text-sm mt-1">
-                        {event.description}
-                      </p>
-                      <p className="text-gray-500 text-sm mt-1">
-                        Date: {new Date(event.date).toLocaleDateString()} |
-                        Location: {event.location}
-                      </p>
-                    </div>
-
-                    <EventRegistrationsList
-                      eventId={event.id}
-                      eventTitle={event.title}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {events.length === 0 && (
-              <div className="bg-gray-800 rounded-lg p-8 text-center">
-                <p className="text-gray-300 text-lg">
-                  No events assigned to you yet.
-                </p>
-              </div>
-            )}
-          </div>
+        {/* Events - Superadmin Only */}
+        {activeTab === 'events' && admin.role === 'superadmin' && <EventManagement onUpdate={() => { }} />}
+        {/* Notifications - Superadmin Only */}
+        {activeTab === 'notifications' && admin.role === 'superadmin' && <NotificationManagement />}
+        {/* Admin Management - Superadmin Only */}
+        {activeTab === 'admins' && admin.role === 'superadmin' && (
+          <AdminManagement
+            admins={admins}
+            currentAdminId={admin.id}
+            onUpdate={fetchAdmins}
+          />
         )}
-      </main>
+      </div>
     </div>
+  );
+}
+
+function TabButton({ active, onClick, icon, label }: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+                flex items-center gap-2 px-4 py-3 font-medium text-sm transition-all relative whitespace-nowrap font-mono
+                ${active
+          ? 'text-white bg-white/10'
+          : 'text-white/50 hover:text-white hover:bg-white/5'
+        }
+            `}
+    >
+      {icon}
+      {label}
+      {active && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500" />
+      )}
+    </button>
   );
 }
