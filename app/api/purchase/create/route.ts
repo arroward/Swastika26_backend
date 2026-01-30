@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminFirestore } from '@/lib/firebase-admin';
+import { SITE_CONFIG } from '@/lib/site-config';
 import {
     CreatePurchaseRequest,
     CreatePurchaseResponse,
     Ticket,
-    Purchase
+    Purchase,
+    TicketType
 } from '@/types/ticketing';
 import {
     generatePurchaseId,
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
 
         // 4. Create tickets
         const ticketIds: string[] = [];
-        const ticketData: { ticketId: string; type: string }[] = [];
+        const ticketData: { ticketId: string; type: TicketType }[] = [];
 
         for (const ticketItem of tickets) {
             for (let i = 0; i < ticketItem.quantity; i++) {
@@ -115,7 +117,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 6. Generate wallet URL
-        const walletUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://swastika.live'}/wallet/${purchaseId}`;
+        const walletUrl = SITE_CONFIG.links.wallet(purchaseId);
 
         // 7. Return response
         const response: CreatePurchaseResponse = {

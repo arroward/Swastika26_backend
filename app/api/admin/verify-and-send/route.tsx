@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminFirestore } from '@/lib/firebase-admin';
 import * as admin from 'firebase-admin';
 import nodemailer from 'nodemailer';
+import { SITE_CONFIG } from '@/lib/site-config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -218,7 +219,7 @@ export async function POST(req: NextRequest) {
             .replace('{{TICKET_DETAILS_HTML}}', ticketDescriptionHtml)
             .replace('{{TOTAL_AMOUNT}}', totalAmount.toString())
             .replace('{{QR_URL}}', qrUrl)
-            .replace('{{TICKET_VIEW_URL}}', `https://swastika.live/ticket/view/${docId}`)
+            .replace('{{TICKET_VIEW_URL}}', `${SITE_CONFIG.baseUrl}/ticket/view/${docId}`)
             .replace('{{BOOKING_ID}}', docId)
             .replace('{{TRANSACTION_ID}}', transactionId);
 
@@ -245,9 +246,9 @@ export async function POST(req: NextRequest) {
         });
 
         await transporter.sendMail({
-            from: SMTP_FROM_EMAIL || `"Swastika '26" <${SMTP_USER}>`,
+            from: SMTP_FROM_EMAIL || `"${SITE_CONFIG.name}" <${SMTP_USER}>`,
             to: email,
-            subject: `Your Ticket for Swastika '26 - ${qrType.toUpperCase()} Access`,
+            subject: `Your Ticket for ${SITE_CONFIG.name} - ${qrType.toUpperCase()} Access`,
             html: emailBody,
         });
 

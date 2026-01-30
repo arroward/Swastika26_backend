@@ -6,10 +6,13 @@ import EventManagement from '@/components/EventManagement';
 import NotificationManagement from '@/components/NotificationManagement';
 import AdminManagement from '@/components/AdminManagement';
 import RegistrationsManagement from '@/components/RegistrationsManagement';
-import { Calendar, Bell, Users, CheckCircle, LogOut, ClipboardList, Loader2 } from 'lucide-react';
+import { Calendar, Bell, Users, CheckCircle, LogOut, ClipboardList, Loader2, Mail } from 'lucide-react';
+import MailCenter from '@/components/MailCenter';
+
 import { useRouter } from 'next/navigation';
 
-type TabType = 'registrations' | 'events' | 'notifications' | 'admins' | 'verify';
+type TabType = 'registrations' | 'events' | 'notifications' | 'admins' | 'verify' | 'mail';
+
 
 interface Admin {
   id: string;
@@ -218,6 +221,15 @@ export default function AdminDashboard() {
                 label="Admin Management"
               />
             )}
+            {/* Mail Center */}
+            <TabButton
+              active={activeTab === 'mail'}
+              onClick={() => setActiveTab('mail')}
+              icon={<Mail className="w-4 h-4" />}
+              label="Mail Center"
+            />
+
+
             {/* Ticket Verification - Last Tab */}
             <TabButton
               active={activeTab === 'verify'}
@@ -250,6 +262,9 @@ export default function AdminDashboard() {
             onUpdate={fetchAdmins}
           />
         )}
+        {activeTab === 'mail' && <MailCenter />}
+
+
       </div>
     </div>
   );

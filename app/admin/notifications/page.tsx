@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { SITE_CONFIG } from '@/lib/site-config';
 
 interface NotificationHistory {
     id: string;
@@ -27,6 +28,7 @@ export default function AdminNotifications() {
     const [selectedNotification, setSelectedNotification] = useState<NotificationHistory | null>(null);
 
     // Calculate days left for Swastika (Feb 20, 2026)
+    // Calculate days left for Swastika (Feb 20, 2026)
     const targetDate = new Date('2026-02-20T00:00:00');
     const today = new Date();
     const timeDiff = targetDate.getTime() - today.getTime();
@@ -36,17 +38,17 @@ export default function AdminNotifications() {
         {
             name: "Daily Countdown 📅",
             title: `⏳ Only ${daysLeft} Days to go!`,
-            body: `The countdown is on! ${daysLeft} days left until Swastika'26. Gear up for the ultimate techno-cultural fest! 🔥`
+            body: `The countdown is on! ${daysLeft} days left until ${SITE_CONFIG.name}. Gear up for the ultimate techno-cultural fest! 🔥`
         },
         {
-            name: "About Swastika 🚀",
-            title: "Experience Swastika'26! 🔥",
-            body: "The National Level Techno-Cultural Fest of MBCCET. A high-octane celebration of technology, creativity, and culture! 🌟"
+            name: `About ${SITE_CONFIG.name.split(" ")[0]} 🚀`,
+            title: `Experience ${SITE_CONFIG.name}! 🔥`,
+            body: `The National Level Techno-Cultural Fest of ${SITE_CONFIG.event.location}. A high-octane celebration of technology, creativity, and culture! 🌟`
         },
         {
-            name: "About MBCET 🏫",
-            title: "Welcome to MBCCET 🌿",
-            body: "Mar Baselios Christian College of Engineering & Technology, Peermade. Quality engineering education in a serene hill-station campus. 🎓"
+            name: "About College 🏫",
+            title: `Welcome to ${SITE_CONFIG.event.location} 🌿`,
+            body: `${SITE_CONFIG.event.college}, Peermade. Quality engineering education in a serene hill-station campus. 🎓`
         },
         {
             name: "Registration 🎟️",

@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import NewTicketingPanel from '@/components/NewTicketingPanel';
 import AdminSearchPanel from '@/components/AdminSearchPanel';
-import { Ticket, Search, BarChart3, Settings } from 'lucide-react';
+import { Ticket, Search, BarChart3, Settings, Mail } from 'lucide-react';
+import MailCenter from '@/components/MailCenter';
 
-type TabType = 'purchases' | 'search' | 'analytics';
+
+type TabType = 'purchases' | 'search' | 'analytics' | 'mail';
+
 
 export default function AdminDashboardPage() {
     const [activeTab, setActiveTab] = useState<TabType>('purchases');
@@ -40,6 +43,12 @@ export default function AdminDashboardPage() {
                             label="Purchase Management"
                         />
                         <TabButton
+                            active={activeTab === 'mail'}
+                            onClick={() => setActiveTab('mail')}
+                            icon={<Mail className="w-4 h-4" />}
+                            label="Mail Center"
+                        />
+                        <TabButton
                             active={activeTab === 'search'}
                             onClick={() => setActiveTab('search')}
                             icon={<Search className="w-4 h-4" />}
@@ -52,6 +61,7 @@ export default function AdminDashboardPage() {
                             label="Analytics"
                             disabled
                         />
+
                     </div>
                 </div>
             </div>
@@ -66,6 +76,8 @@ export default function AdminDashboardPage() {
                         <p className="text-gray-500">Analytics Dashboard Coming Soon</p>
                     </div>
                 )}
+                {activeTab === 'mail' && <MailCenter />}
+
             </div>
         </div>
     );
