@@ -133,6 +133,30 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
         }
     };
 
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this registration? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/admin/registrations/${id}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || "Failed to delete");
+            }
+
+            // Remove from state
+            setRegistrations(prev => prev.filter(r => r.id !== id));
+            alert("Registration deleted successfully");
+        } catch (err: any) {
+            console.error("Delete error:", err);
+            alert("Failed to delete: " + err.message);
+        }
+    };
+
     const selectedEvent = Array.isArray(events) ? events.find((e) => e.id === selectedEventId) : null;
 
     return (
@@ -213,6 +237,8 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
                 eventTitle={selectedEvent?.title}
                 isLoading={isLoading}
                 onDownload={handleDownload}
+                onDelete={handleDelete}
+                userRole={role}
             />
         </div>
     );

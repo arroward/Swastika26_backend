@@ -611,3 +611,37 @@ export async function deleteEvent(eventId: string) {
     throw error;
   }
 }
+
+// Delete registration (for superadmin)
+export async function deleteRegistration(registrationId: string) {
+  try {
+    // First get the event_id
+    const registration = await sql`
+      SELECT event_id FROM event_registrations WHERE id = ${registrationId}
+    `;
+
+    if (registration.length === 0) {
+      return false; // Registration not found
+    }
+
+    const eventId = registration[0].event_id;
+
+    // Delete the registration
+    await sql`
+      DELETE FROM event_registrations
+      WHERE id = ${registrationId}
+    `;
+
+    // Decrement the registered_count in events table
+    await sql`
+      UPDATE events
+      SET registered_count = GREATEST(0, registered_count - 1)
+      WHERE id = ${eventId}
+    `;
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting registration:", error);
+    throw error;
+  }
+}

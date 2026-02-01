@@ -221,29 +221,33 @@ export default function AdminDashboard() {
                 label="Admin Management"
               />
             )}
-            {/* Mail Center */}
-            <TabButton
-              active={activeTab === 'mail'}
-              onClick={() => setActiveTab('mail')}
-              icon={<Mail className="w-4 h-4" />}
-              label="Mail Center"
-            />
+            {/* Mail Center - Superadmin Only */}
+            {admin.role === 'superadmin' && (
+              <TabButton
+                active={activeTab === 'mail'}
+                onClick={() => setActiveTab('mail')}
+                icon={<Mail className="w-4 h-4" />}
+                label="Mail Center"
+              />
+            )}
 
 
-            {/* Ticket Verification - Last Tab */}
-            <TabButton
-              active={activeTab === 'verify'}
-              onClick={() => setActiveTab('verify')}
-              icon={<CheckCircle className="w-4 h-4" />}
-              label="Ticket Verification"
-            />
+            {/* Ticket Verification - Superadmin Only */}
+            {admin.role === 'superadmin' && (
+              <TabButton
+                active={activeTab === 'verify'}
+                onClick={() => setActiveTab('verify')}
+                icon={<CheckCircle className="w-4 h-4" />}
+                label="Ticket Verification"
+              />
+            )}
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {activeTab === 'verify' && <UnifiedTicketManagement />}
+        {activeTab === 'verify' && admin.role === 'superadmin' && <UnifiedTicketManagement />}
         {activeTab === 'registrations' && (
           <RegistrationsManagement
             adminId={admin.id}
@@ -262,7 +266,7 @@ export default function AdminDashboard() {
             onUpdate={fetchAdmins}
           />
         )}
-        {activeTab === 'mail' && <MailCenter />}
+        {activeTab === 'mail' && admin.role === 'superadmin' && <MailCenter />}
 
 
       </div>

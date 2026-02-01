@@ -5,6 +5,8 @@ interface RegistrationsTableProps {
   eventTitle?: string;
   isLoading: boolean;
   onDownload: (format: "csv" | "pdf") => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
+  userRole?: string;
 }
 
 export default function RegistrationsTable({
@@ -12,6 +14,8 @@ export default function RegistrationsTable({
   eventTitle,
   isLoading,
   onDownload,
+  onDelete,
+  userRole,
 }: RegistrationsTableProps) {
   const [downloadFormat, setDownloadFormat] = useState<"csv" | "pdf">("csv");
   const [isDownloading, setIsDownloading] = useState(false);
@@ -138,6 +142,11 @@ export default function RegistrationsTable({
                   Event
                 </th>
               )}
+              {userRole === 'superadmin' && onDelete && (
+                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-200">
+                  Actions
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -194,6 +203,21 @@ export default function RegistrationsTable({
                 {!eventTitle && (
                   <td className="px-6 py-4 text-gray-200 text-sm">
                     {reg.eventTitle}
+                  </td>
+                )}
+                {userRole === 'superadmin' && onDelete && (
+                  <td className="px-6 py-4 text-gray-200 text-sm">
+                    <button
+                      onClick={() => onDelete(reg.id)}
+                      className="text-red-400 hover:text-red-300 transition-colors p-2 hover:bg-red-900/20 rounded"
+                      title="Delete Registration"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      </svg>
+                    </button>
                   </td>
                 )}
               </tr>

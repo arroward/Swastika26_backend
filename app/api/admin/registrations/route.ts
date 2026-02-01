@@ -9,38 +9,43 @@ import {
 } from "@/lib/db";
 import { cookies } from "next/headers";
 
-// Helper to get admin from session
-async function getAdminFromSession(request: NextRequest) {
-  const cookieStore = await cookies();
-  const adminId = cookieStore.get("admin_session")?.value;
 
-  if (!adminId) {
-    return null;
-  }
-
-  // In production, validate JWT token and get admin details
-  return adminId;
-}
 
 export async function GET(request: NextRequest) {
   try {
-    const adminId = await getAdminFromSession(request);
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get("admin_session");
 
-    console.log("Admin session:", adminId);
+    if (!sessionCookie) {
+      console.log("No admin session found");
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    let admin;
+    try {
+      admin = JSON.parse(sessionCookie.value);
+    } catch (e) {
+      console.log("Failed to parse session cookie");
+      return NextResponse.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    const adminId = admin.id;
+    const adminRole = admin.role;
+
+    console.log("Admin session:", adminId, "Role:", adminRole);
 
     if (!adminId) {
-      console.log("No admin session found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     const eventId = searchParams.get("eventId");
-    const role = searchParams.get("role");
+    // const role = searchParams.get("role"); // Do NOT trust role from params
 
-    console.log("Request params:", { eventId, role });
+    console.log("Request params:", { eventId, role: adminRole });
 
     // Superadmin gets all registrations
-    if (role === "superadmin") {
+    if (adminRole === "superadmin") {
       const registrations = await getAllRegistrations();
       return NextResponse.json({
         success: true,
@@ -49,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Event coordinator gets registrations for their events
-    if (role === "event_coordinator") {
+    if (adminRole === "event_coordinator") {
       // If eventId is specified, verify coordinator owns this event
       if (eventId) {
         console.log("Fetching registrations for event:", eventId);
@@ -60,7 +65,10 @@ export async function GET(request: NextRequest) {
           WHERE admin_id = ${adminId} AND event_id = ${eventId}
         `;
 
-        if (eventOwnership[0].count === 0) {
+        // count is usually returned as a string or number depending on driver
+        const count = Number(eventOwnership[0].count);
+
+        if (count === 0) {
           console.log("Coordinator does not own this event");
           return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
@@ -85,10 +93,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log("Invalid request - missing role or eventId");
+    console.log("Invalid role configuration");
     return NextResponse.json(
-      { error: "Invalid request parameters" },
-      { status: 400 },
+      { error: "Access denied" },
+      { status: 403 },
     );
   } catch (error) {
     console.error("Error fetching registrations:", error);
