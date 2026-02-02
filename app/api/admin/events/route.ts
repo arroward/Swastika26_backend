@@ -34,26 +34,30 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
 
-    console.log(`Fetching events for admin ${admin.email} with role ${role}`);
+    console.log(`Fetching events for admin ${admin.email} with role ${role || admin.role}`);
 
     let events: Event[] = [];
 
+    // Determine effective role
+    const effectiveRole = role || admin.role;
+
     // Superadmin sees all events
-    if (role === "superadmin") {
+    if (effectiveRole === "superadmin") {
       events = await getEvents();
       console.log(`Superadmin: fetched ${events.length} events`);
     }
-
     // Event coordinator sees only their managed events
-    if (role === "event_coordinator") {
+    else if (effectiveRole === "event_coordinator") {
       events = await getAdminManagedEvents(admin.id);
       console.log(`Coordinator ${admin.id}: fetched ${events.length} events`);
     }
+    // Default: return all events
+    else {
+      events = await getEvents();
+      console.log(`Default: fetched ${events.length} events`);
+    }
 
-    return NextResponse.json({
-      success: true,
-      data: events,
-    });
+    return NextResponse.json(events);
   } catch (error) {
     console.error("Error fetching events:", error);
     return NextResponse.json(

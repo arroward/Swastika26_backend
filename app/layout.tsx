@@ -1,26 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Pirata_One } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const pirataOne = Pirata_One({
-  variable: "--font-pirata-one",
-  weight: "400",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Admin - SWASTIKA 26",
-  description: "Admin Panel for Swastika 26",
+  title: "Swastika '26 Admin",
+  description: "Admin Dashboard for Swastika 2026",
 };
 
 export default function RootLayout({
@@ -30,11 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${pirataOne.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
