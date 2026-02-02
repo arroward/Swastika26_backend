@@ -48,10 +48,22 @@ export default function AdminDashboard() {
       }
 
       // Validate session with server
-      const response = await fetch('/api/admin/session');
+      const response = await fetch('/api/admin/session', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
+
+      if (response.status === 401) {
+        setSessionError('Session expired');
+        localStorage.removeItem('admin');
+        setTimeout(() => {
+          router.push('/login');
+        }, 1500);
+        return;
+      }
 
       if (!response.ok) {
-        throw new Error('Session expired');
+        throw new Error(`Session check failed (${response.status})`);
       }
 
       const data = await response.json();

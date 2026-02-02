@@ -1,10 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Pirata+One&display=swap");
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark *));
 
 .font-pirata {
-  font-family: var(--font-pirata-one), serif;
+  font-family: "Georgia", "Times New Roman", serif;
 }
 
 :root {
