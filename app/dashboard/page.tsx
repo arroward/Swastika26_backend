@@ -255,13 +255,15 @@ export default function AdminDashboard() {
                 label="Admin Management"
               />
             )}
-            {/* Mail Center */}
-            <TabButton
-              active={activeTab === "mail"}
-              onClick={() => setActiveTab("mail")}
-              icon={<Mail className="w-4 h-4" />}
-              label="Mail Center"
-            />
+            {/* Mail Center - Superadmin Only */}
+            {admin.role === "superadmin" && (
+              <TabButton
+                active={activeTab === "mail"}
+                onClick={() => setActiveTab("mail")}
+                icon={<Mail className="w-4 h-4" />}
+                label="Mail Center"
+              />
+            )}
 
             {/* Ticket Verification - Last Tab */}
             <TabButton
@@ -296,7 +298,7 @@ export default function AdminDashboard() {
             onUpdate={fetchAdmins}
           />
         )}
-        {activeTab === "mail" && <MailCenter />}
+        {activeTab === "mail" && admin.role === "superadmin" && <MailCenter />}
       </div>
     </div>
   );
