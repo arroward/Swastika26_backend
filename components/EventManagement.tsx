@@ -219,6 +219,8 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
     setError("");
 
     try {
+      const parsedRules = JSON.parse(formData.rules || "[]");
+
       if (isCreating) {
         // Create new event
         const response = await fetch("/api/admin/events", {
