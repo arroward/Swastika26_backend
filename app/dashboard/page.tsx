@@ -265,20 +265,24 @@ export default function AdminDashboard() {
               />
             )}
 
-            {/* Ticket Verification - Last Tab */}
-            <TabButton
-              active={activeTab === "verify"}
-              onClick={() => setActiveTab("verify")}
-              icon={<CheckCircle className="w-4 h-4" />}
-              label="Ticket Verification"
-            />
+            {/* Ticket Verification - Superadmin Only */}
+            {admin.role === "superadmin" && (
+              <TabButton
+                active={activeTab === "verify"}
+                onClick={() => setActiveTab("verify")}
+                icon={<CheckCircle className="w-4 h-4" />}
+                label="Ticket Verification"
+              />
+            )}
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {activeTab === "verify" && <UnifiedTicketManagement />}
+        {activeTab === "verify" && admin.role === "superadmin" && (
+          <UnifiedTicketManagement />
+        )}
         {activeTab === "registrations" && (
           <RegistrationsManagement adminId={admin.id} role={admin.role} />
         )}
