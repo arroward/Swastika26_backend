@@ -3,12 +3,12 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Define types based on what we see in the app
-type Event = {
+export type Event = {
     id: string;
     title: string;
 };
 
-type Registration = {
+export type Registration = {
     id: string;
     fullName: string;
     email: string;

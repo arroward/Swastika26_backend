@@ -31,6 +31,8 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
         fetchRegistrations(role, selectedEventId);
     }, [selectedEventId]);
 
+    const selectedEvent = Array.isArray(events) ? events.find((e) => e.id === selectedEventId) : null;
+
     const handleDownload = async (format: "csv" | "pdf") => {
         if (registrations.length === 0) {
             alert("No registrations to export");
@@ -219,8 +221,6 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
         }
     };
 
-    const selectedEvent = Array.isArray(events) ? events.find((e) => e.id === selectedEventId) : null;
-
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -259,7 +259,11 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
                 <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
                     <h2 className="text-[10px] font-mono text-white/50 uppercase tracking-widest mb-1">Total Registrations</h2>
                     <div className="flex items-end gap-2">
-                        <span className="text-4xl font-syne font-bold text-white">{registrations.length}</span>
+                        {isLoading ? (
+                            <div className="h-10 w-24 bg-white/10 rounded animate-pulse mb-1"></div>
+                        ) : (
+                            <span className="text-4xl font-syne font-bold text-white animate-in fade-in slide-in-from-bottom-2 duration-500">{registrations.length}</span>
+                        )}
                         <span className="text-xs font-mono text-blue-400 mb-2">entries</span>
                     </div>
                 </div>
@@ -267,12 +271,16 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
                 <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
                     <h2 className="text-[10px] font-mono text-white/50 uppercase tracking-widest mb-1">Total Participants</h2>
                     <div className="flex items-end gap-2">
-                        <span className="text-4xl font-syne font-bold text-white">
-                            {registrations.reduce(
-                                (sum, reg) => sum + (reg.teamSize || 1),
-                                0
-                            )}
-                        </span>
+                        {isLoading ? (
+                            <div className="h-10 w-24 bg-white/10 rounded animate-pulse mb-1"></div>
+                        ) : (
+                            <span className="text-4xl font-syne font-bold text-white animate-in fade-in slide-in-from-bottom-2 duration-500 delay-75">
+                                {registrations.reduce(
+                                    (sum, reg) => sum + (reg.teamSize || 1),
+                                    0
+                                )}
+                            </span>
+                        )}
                         <span className="text-xs font-mono text-green-400 mb-2">people</span>
                     </div>
                 </div>
@@ -280,7 +288,11 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
                 <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
                     <h2 className="text-[10px] font-mono text-white/50 uppercase tracking-widest mb-1">Active Events</h2>
                     <div className="flex items-end gap-2">
-                        <span className="text-4xl font-syne font-bold text-white">{events.length}</span>
+                        {isLoading ? (
+                            <div className="h-10 w-24 bg-white/10 rounded animate-pulse mb-1"></div>
+                        ) : (
+                            <span className="text-4xl font-syne font-bold text-white animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">{events.length}</span>
+                        )}
                         <span className="text-xs font-mono text-purple-400 mb-2">events</span>
                     </div>
                 </div>

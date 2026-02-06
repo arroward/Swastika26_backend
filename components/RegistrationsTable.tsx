@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { Registration } from "./DashboardContext";
 
 interface RegistrationsTableProps {
-  registrations: any[];
+  registrations: Registration[];
   eventTitle?: string;
   isLoading: boolean;
   onDownload: (format: "csv" | "pdf") => Promise<void>;
@@ -17,7 +18,7 @@ export default function RegistrationsTable({
   onDelete,
   userRole,
 }: RegistrationsTableProps) {
-  const [selectedRegistration, setSelectedRegistration] = useState<any>(null);
+  const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async (format: "csv" | "pdf") => {
@@ -31,8 +32,51 @@ export default function RegistrationsTable({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-40 sm:h-64">
-        <div className="animate-spin rounded-full h-8 sm:h-12 w-8 sm:w-12 border-b-2 border-blue-500"></div>
+      <div className="bg-white/5 rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm shadow-xl animate-pulse">
+        <div className="p-4 sm:p-6 lg:p-8 border-b border-white/10 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center bg-black/20">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-white/10 rounded"></div>
+            <div className="h-4 w-32 bg-white/5 rounded"></div>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <div className="h-10 w-24 bg-white/10 rounded-lg"></div>
+            <div className="h-10 w-24 bg-red-600/20 rounded-lg"></div>
+          </div>
+        </div>
+        <div className="hidden md:block">
+          <div className="w-full">
+            <div className="bg-black/20 h-10 w-full mb-1"></div>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center px-6 py-4 border-b border-white/5">
+                <div className="flex-1 space-y-2">
+                  <div className="h-5 w-32 bg-white/10 rounded"></div>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-40 bg-white/10 rounded"></div>
+                  <div className="h-3 w-24 bg-white/5 rounded"></div>
+                </div>
+                <div className="flex-1">
+                  <div className="h-4 w-24 bg-white/10 rounded"></div>
+                </div>
+                <div className="flex-1 text-right">
+                  <div className="h-8 w-20 bg-white/5 rounded ml-auto"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="md:hidden p-4 space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3">
+              <div className="flex justify-between">
+                <div className="h-6 w-32 bg-white/10 rounded"></div>
+                <div className="h-5 w-20 bg-white/5 rounded-full"></div>
+              </div>
+              <div className="h-4 w-48 bg-white/5 rounded"></div>
+              <div className="h-8 w-full bg-white/5 rounded mt-2"></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -53,166 +97,168 @@ export default function RegistrationsTable({
   }
 
   return (
-    <div className="bg-white/5 rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm shadow-xl">
-      {/* Header with title and download buttons */}
-      <div className="p-4 sm:p-6 lg:p-8 border-b border-white/10 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start lg:items-center bg-black/20">
-        <div className="min-w-0">
-          <h2 className="text-xl sm:text-2xl font-bold text-white truncate font-syne">
-            {eventTitle ? `${eventTitle} - Registrations` : "All Registrations"}
-          </h2>
-          <p className="text-white/50 mt-1 text-xs sm:text-sm font-mono">
-            Total: <span className="text-white font-bold">{registrations.length}</span> registrations
-          </p>
-        </div>
-
-        <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
-          <button
-            onClick={() => handleDownload("csv")}
-            disabled={isDownloading}
-            className="flex-1 sm:flex-none bg-green-900/40 hover:bg-green-800/60 text-green-400 border border-green-500/30 text-xs sm:text-sm font-mono font-medium py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <span className="hidden sm:inline">
-              Download CSV
-            </span>
-            <span className="sm:hidden">CSV</span>
-          </button>
-          <button
-            onClick={() => handleDownload("pdf")}
-            disabled={isDownloading}
-            className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shadow-lg shadow-red-900/20"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-              />
-            </svg>
-            <span className="hidden sm:inline">
-              Download PDF
-            </span>
-            <span className="sm:hidden">PDF</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Card View (Simplified) */}
-      <div className="md:hidden space-y-4 p-4">
-        {registrations.map((reg, index) => (
-          <div
-            key={reg.id || index}
-            className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-white font-bold text-lg font-syne">{reg.fullName}</h3>
-                <p className="text-white/60 text-sm">{reg.email}</p>
-              </div>
-              <span className="text-[10px] text-white/50 font-mono bg-white/5 px-2 py-1 rounded-full border border-white/10">
-                {new Date(reg.registrationDate).toLocaleDateString()}
-              </span>
-            </div>
-
-            {!eventTitle && (
-              <p className="text-sm text-white/80"><span className="text-white/40 text-xs font-mono uppercase tracking-wider block mb-0.5">Event</span> {reg.eventTitle}</p>
-            )}
-
-            <div className="flex justify-between items-center pt-3 border-t border-white/10">
-              <button
-                onClick={() => setSelectedRegistration(reg)}
-                className="text-blue-400 hover:text-blue-300 text-xs font-mono uppercase tracking-wider"
-              >
-                VIEW DETAILS
-              </button>
-
-              {userRole === "superadmin" && onDelete && (
-                <button
-                  onClick={() => onDelete(reg.id)}
-                  className="text-red-400 hover:text-red-300 text-xs font-mono uppercase tracking-wider"
-                >
-                  Delete
-                </button>
-              )}
-            </div>
+    <>
+      <div className="bg-white/5 rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm shadow-xl">
+        {/* Header with title and download buttons */}
+        <div className="p-4 sm:p-6 lg:p-8 border-b border-white/10 flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start lg:items-center bg-black/20">
+          <div className="min-w-0">
+            <h2 className="text-xl sm:text-2xl font-bold text-white truncate font-syne">
+              {eventTitle ? `${eventTitle} - Registrations` : "All Registrations"}
+            </h2>
+            <p className="text-white/50 mt-1 text-xs sm:text-sm font-mono">
+              Total: <span className="text-white font-bold">{registrations.length}</span> registrations
+            </p>
           </div>
-        ))}
-      </div>
 
-      {/* Desktop Table (Simplified) */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="bg-black/20 text-xs uppercase font-mono text-white/50 tracking-wider">
-            <tr>
-              <th className="px-6 py-4 font-normal">Name</th>
-              <th className="px-6 py-4 font-normal">Contact</th>
-              <th className="px-6 py-4 font-normal">Date</th>
+          <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
+            <button
+              onClick={() => handleDownload("csv")}
+              disabled={isDownloading}
+              className="flex-1 sm:flex-none bg-green-900/40 hover:bg-green-800/60 text-green-400 border border-green-500/30 text-xs sm:text-sm font-mono font-medium py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span className="hidden sm:inline">
+                Download CSV
+              </span>
+              <span className="sm:hidden">CSV</span>
+            </button>
+            <button
+              onClick={() => handleDownload("pdf")}
+              disabled={isDownloading}
+              className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shadow-lg shadow-red-900/20"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                />
+              </svg>
+              <span className="hidden sm:inline">
+                Download PDF
+              </span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Card View (Simplified) */}
+        <div className="md:hidden space-y-4 p-4">
+          {registrations.map((reg, index) => (
+            <div
+              key={reg.id || index}
+              className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-white font-bold text-lg font-syne">{reg.fullName}</h3>
+                  <p className="text-white/60 text-sm">{reg.email}</p>
+                </div>
+                <span className="text-[10px] text-white/50 font-mono bg-white/5 px-2 py-1 rounded-full border border-white/10">
+                  {new Date(reg.registrationDate).toLocaleDateString()}
+                </span>
+              </div>
+
               {!eventTitle && (
-                <th className="px-6 py-4 font-normal">Event</th>
+                <p className="text-sm text-white/80"><span className="text-white/40 text-xs font-mono uppercase tracking-wider block mb-0.5">Event</span> {reg.eventTitle}</p>
               )}
-              <th className="px-6 py-4 font-normal text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {registrations.map((reg, index) => (
-              <tr key={reg.id || index} className="hover:bg-white/5 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="font-semibold text-white">{reg.fullName}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-white/80">{reg.email}</div>
-                  <div className="text-white/40 text-xs font-mono mt-0.5">{reg.phone}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="text-white/60 font-mono text-xs">
-                    {new Date(reg.registrationDate).toLocaleDateString()}
-                  </span>
-                </td>
-                {!eventTitle && (
-                  <td className="px-6 py-4 text-white/80 font-medium">
-                    {reg.eventTitle}
-                  </td>
+
+              <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                <button
+                  onClick={() => setSelectedRegistration(reg)}
+                  className="text-blue-400 hover:text-blue-300 text-xs font-mono uppercase tracking-wider"
+                >
+                  VIEW DETAILS
+                </button>
+
+                {userRole === "superadmin" && onDelete && (
+                  <button
+                    onClick={() => onDelete(reg.id)}
+                    className="text-red-400 hover:text-red-300 text-xs font-mono uppercase tracking-wider"
+                  >
+                    Delete
+                  </button>
                 )}
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end items-center gap-4">
-                    <button
-                      onClick={() => setSelectedRegistration(reg)}
-                      className="text-blue-400 hover:text-blue-300 text-xs font-mono uppercase tracking-wider transition-colors"
-                    >
-                      Details
-                    </button>
-                    {userRole === "superadmin" && onDelete && (
-                      <button
-                        onClick={() => onDelete(reg.id)}
-                        className="text-red-400 hover:text-red-300 text-xs font-mono uppercase tracking-wider transition-colors"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </td>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table (Simplified) */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-black/20 text-xs uppercase font-mono text-white/50 tracking-wider">
+              <tr>
+                <th className="px-6 py-4 font-normal">Name</th>
+                <th className="px-6 py-4 font-normal">Contact</th>
+                <th className="px-6 py-4 font-normal">Date</th>
+                {!eventTitle && (
+                  <th className="px-6 py-4 font-normal">Event</th>
+                )}
+                <th className="px-6 py-4 font-normal text-right">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {registrations.map((reg, index) => (
+                <tr key={reg.id || index} className="hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="font-semibold text-white">{reg.fullName}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-white/80">{reg.email}</div>
+                    <div className="text-white/40 text-xs font-mono mt-0.5">{reg.phone}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-white/60 font-mono text-xs">
+                      {new Date(reg.registrationDate).toLocaleDateString()}
+                    </span>
+                  </td>
+                  {!eventTitle && (
+                    <td className="px-6 py-4 text-white/80 font-medium">
+                      {reg.eventTitle}
+                    </td>
+                  )}
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end items-center gap-4">
+                      <button
+                        onClick={() => setSelectedRegistration(reg)}
+                        className="text-blue-400 hover:text-blue-300 text-xs font-mono uppercase tracking-wider transition-colors"
+                      >
+                        Details
+                      </button>
+                      {userRole === "superadmin" && onDelete && (
+                        <button
+                          onClick={() => onDelete(reg.id)}
+                          className="text-red-400 hover:text-red-300 text-xs font-mono uppercase tracking-wider transition-colors"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Details Modal */}
@@ -286,12 +332,27 @@ export default function RegistrationsTable({
                             if (Array.isArray(members)) {
                               return (
                                 <div className="space-y-2">
-                                  {members.map((m: any, idx: number) => (
-                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between text-xs sm:text-sm p-2 rounded hover:bg-white/5 border border-transparent hover:border-white/5 transition-colors">
-                                      <span className="font-bold text-white">{m.name || `Member ${idx + 1}`}</span>
-                                      <span className="text-white/50 font-mono">{m.email}</span>
-                                    </div>
-                                  ))}
+                                  {members.map((m: any, idx: number) => {
+                                    // Handle string elements
+                                    if (typeof m === 'string') {
+                                      return (
+                                        <div key={idx} className="flex items-center text-xs sm:text-sm p-2 rounded hover:bg-white/5 border border-transparent hover:border-white/5 transition-colors">
+                                          <span className="font-bold text-white max-w-full break-words">{m}</span>
+                                        </div>
+                                      );
+                                    }
+
+                                    // Handle objects with flexible key naming
+                                    const name = m.name || m.fullName || m.userName || m.studentName || `Member ${idx + 1}`;
+                                    const email = m.email || m.emailAddress || '';
+
+                                    return (
+                                      <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between text-xs sm:text-sm p-2 rounded hover:bg-white/5 border border-transparent hover:border-white/5 transition-colors">
+                                        <span className="font-bold text-white break-words pr-2">{name}</span>
+                                        {email && <span className="text-white/50 font-mono break-all">{email}</span>}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               );
                             } else if (typeof members === 'object' && members !== null) {
@@ -368,6 +429,6 @@ export default function RegistrationsTable({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
