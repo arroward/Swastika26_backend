@@ -179,9 +179,13 @@ export async function GET(request: NextRequest) {
 
     let data: any[] = [];
 
-    // Superadmin downloads all registrations
+    // Superadmin downloads all registrations or filtered by event
     if (role === "superadmin") {
-      data = await getAllRegistrations();
+      if (eventId) {
+        data = await getRegistrationsByEvent(eventId);
+      } else {
+        data = await getAllRegistrations();
+      }
     }
 
     // Event coordinator downloads registrations for their event

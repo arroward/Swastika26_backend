@@ -74,7 +74,7 @@ export default function UnifiedTicketManagement() {
             </div>
 
             {/* Tab Navigation */}
-            <div className="grid grid-cols-3 gap-2 bg-gray-900/50 p-1.5 rounded-xl border border-gray-800">
+            <div className="grid grid-cols-3 gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
                 <button
                     onClick={() => setActiveView('verify')}
                     className={`flex flex-col md:flex-row items-center justify-center gap-2 px-2 md:px-6 py-3 rounded-lg text-xs md:text-sm font-bold transition-all ${activeView === 'verify'
@@ -256,7 +256,7 @@ function VerificationPanel({ viewMode = 'verification' }: VerificationPanelProps
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-gray-800 p-4 rounded-lg border border-gray-700">
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm">
                 <div>
                     <h2 className="text-xl font-bold text-white">
                         {viewMode === 'admitted' ? 'Admitted Attendees' : 'Ticket Verification'}
@@ -288,11 +288,11 @@ function VerificationPanel({ viewMode = 'verification' }: VerificationPanelProps
             </div>
 
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 w-4 h-4" />
                 <input
                     type="text"
                     placeholder="Search by Name, Email, or Transaction ID..."
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500 transition-colors"
+                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-red-500 transition-colors placeholder-white/30"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -379,10 +379,10 @@ function PassCard({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className={`
-                bg-gray-800 border rounded-lg p-4 relative overflow-hidden group
+                bg-white/5 border rounded-xl p-4 relative overflow-hidden group backdrop-blur-sm
                 ${pass.status === 'verified' ? 'border-green-500/20' : ''}
                 ${pass.status === 'rejected' ? 'border-red-500/20' : ''}
-                ${pass.status === 'pending' ? 'border-yellow-500/50' : ''}
+                ${pass.status === 'pending' ? 'border-yellow-500/50' : 'border-white/10'}
             `}
         >
             <div className={`absolute left-0 top-0 bottom-0 w-1 
@@ -784,7 +784,7 @@ function TicketScanner() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-4">
-            <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="bg-white/5 p-4 rounded-xl border border-white/10 backdrop-blur-sm flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         <Scan className="w-6 h-6 text-blue-400" /> Ticket Scanner
@@ -792,7 +792,7 @@ function TicketScanner() {
                     <p className="text-sm text-gray-400">Scan QR codes for entry.</p>
                 </div>
 
-                <div className="flex bg-gray-900 rounded-lg p-1 border border-gray-700">
+                <div className="flex bg-black/40 rounded-xl p-1 border border-white/10">
                     <button
                         onClick={() => setScanDay('day1')}
                         className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${scanDay === 'day1' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'

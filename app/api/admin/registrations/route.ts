@@ -42,9 +42,16 @@ export async function GET(request: NextRequest) {
 
     console.log("Request params:", { eventId, role: adminRole });
 
-    // Superadmin gets all registrations
+    // Superadmin gets all registrations, or filtered by event
     if (adminRole === "superadmin") {
-      const registrations = await getAllRegistrations();
+      let registrations;
+      if (eventId) {
+        console.log("Superadmin fetching registrations for event:", eventId);
+        registrations = await getRegistrationsByEvent(eventId);
+      } else {
+        registrations = await getAllRegistrations();
+      }
+
       return NextResponse.json({
         success: true,
         data: registrations,

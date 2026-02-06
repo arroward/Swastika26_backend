@@ -6,6 +6,9 @@ import EventManagement from "@/components/EventManagement";
 import NotificationManagement from "@/components/NotificationManagement";
 import AdminManagement from "@/components/AdminManagement";
 import RegistrationsManagement from "@/components/RegistrationsManagement";
+import MailCenter from "@/components/MailCenter";
+import { DashboardProvider } from "@/components/DashboardContext";
+import PaymentVerificationPanel from "@/components/PaymentVerificationPanel";
 import {
   Calendar,
   Bell,
@@ -15,9 +18,8 @@ import {
   ClipboardList,
   Loader2,
   Mail,
+  CreditCard,
 } from "lucide-react";
-import MailCenter from "@/components/MailCenter";
-
 import { useRouter } from "next/navigation";
 
 type TabType =
@@ -26,6 +28,7 @@ type TabType =
   | "notifications"
   | "admins"
   | "verify"
+  | "verify-payment"
   | "mail";
 
 interface Admin {
@@ -133,7 +136,6 @@ export default function AdminDashboard() {
       }
 
       if (data.success) {
-        // Handle both response formats: {success, admins} or {success, data}
         const adminsData = data.admins || data.data;
         if (Array.isArray(adminsData)) {
           setAdmins(adminsData);
@@ -155,7 +157,6 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
-      // Call logout API to clear server session
       await fetch("/api/admin/logout", { method: "POST" });
     } catch (error) {
       console.error("Logout error:", error);
@@ -188,125 +189,142 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header */}
-      <div className="bg-black/40 border-b border-white/10 backdrop-blur-md sticky top-0 z-50">
-        <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-syne font-bold tracking-tight truncate">
-                Swastika '26
-              </h1>
-              <p className="text-xs font-mono text-white/50 uppercase tracking-widest mt-0.5 sm:mt-1">
-                Admin Dashboard
-              </p>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-              <div className="text-xs sm:text-sm">
-                <div className="text-white/50 text-xs font-mono">Welcome,</div>
-                <div className="font-syne font-semibold truncate">
-                  {admin.name}
+    <DashboardProvider>
+      <div className="min-h-screen bg-[#0a0a0a] text-white">
+        {/* ... (rest of the component) */}
+        {/* Header */}
+        <div className="bg-black/40 border-b border-white/10 backdrop-blur-md sticky top-0 z-50">
+          <div className="w-full px-3 sm:px-4 lg:px-6 py-2 sm:py-3">
+            <div className="flex items-center justify-between gap-3">
+              {/* ... content ... */}
+              <div className="min-w-0 flex items-center gap-3">
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-syne font-bold tracking-tight truncate">
+                    Swastika '26
+                  </h1>
+                  <p className="hidden sm:block text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                    Admin Dashboard
+                  </p>
                 </div>
               </div>
-              <button
-                onClick={handleLogout}
-                className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all shadow-lg shadow-red-900/20 flex-shrink-0"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
+              <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+                <div className="text-right hidden sm:block">
+                  <div className="text-white/50 text-[10px] font-mono">Welcome,</div>
+                  <div className="font-syne font-semibold text-sm truncate max-w-[150px]">
+                    {admin.name}
+                  </div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="p-2 sm:px-4 sm:py-2 bg-red-600 hover:bg-red-700 rounded-lg text-xs font-medium transition-all shadow-lg shadow-red-900/20 flex items-center gap-2"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-black/20 border-b border-white/10 backdrop-blur-sm overflow-x-auto">
-        <div className="w-full px-3 sm:px-4 lg:px-6">
-          <div className="flex gap-1 overflow-x-auto pb-0 min-w-min">
-            <TabButton
-              active={activeTab === "registrations"}
-              onClick={() => setActiveTab("registrations")}
-              icon={<ClipboardList className="w-4 h-4" />}
-              label="Registrations"
-            />
-            {/* Events - Superadmin Only */}
-            {admin.role === "superadmin" && (
+        {/* Navigation Tabs */}
+        <div className="bg-black/20 border-b border-white/10 backdrop-blur-sm overflow-x-auto">
+          <div className="w-full px-3 sm:px-4 lg:px-6">
+            <div className="flex gap-1 overflow-x-auto pb-0 min-w-min">
               <TabButton
-                active={activeTab === "events"}
-                onClick={() => setActiveTab("events")}
-                icon={<Calendar className="w-4 h-4" />}
-                label="Events"
+                active={activeTab === "registrations"}
+                onClick={() => setActiveTab("registrations")}
+                icon={<ClipboardList className="w-4 h-4" />}
+                label="Registrations"
               />
-            )}
-            {/* Notifications - Superadmin Only */}
-            {admin.role === "superadmin" && (
-              <TabButton
-                active={activeTab === "notifications"}
-                onClick={() => setActiveTab("notifications")}
-                icon={<Bell className="w-4 h-4" />}
-                label="Notifications"
-              />
-            )}
-            {/* Admin Management - Superadmin Only */}
-            {admin.role === "superadmin" && (
-              <TabButton
-                active={activeTab === "admins"}
-                onClick={() => setActiveTab("admins")}
-                icon={<Users className="w-4 h-4" />}
-                label="Admin Management"
-              />
-            )}
-            {/* Mail Center - Superadmin Only */}
-            {admin.role === "superadmin" && (
-              <TabButton
-                active={activeTab === "mail"}
-                onClick={() => setActiveTab("mail")}
-                icon={<Mail className="w-4 h-4" />}
-                label="Mail Center"
-              />
-            )}
+              {/* Events - Superadmin Only */}
+              {admin.role === "superadmin" && (
+                <TabButton
+                  active={activeTab === "events"}
+                  onClick={() => setActiveTab("events")}
+                  icon={<Calendar className="w-4 h-4" />}
+                  label="Events"
+                />
+              )}
+              {/* Notifications - Superadmin Only */}
+              {admin.role === "superadmin" && (
+                <TabButton
+                  active={activeTab === "notifications"}
+                  onClick={() => setActiveTab("notifications")}
+                  icon={<Bell className="w-4 h-4" />}
+                  label="Notifications"
+                />
+              )}
+              {/* Admin Management - Superadmin Only */}
+              {admin.role === "superadmin" && (
+                <TabButton
+                  active={activeTab === "admins"}
+                  onClick={() => setActiveTab("admins")}
+                  icon={<Users className="w-4 h-4" />}
+                  label="Admin Management"
+                />
+              )}
+              {/* Mail Center - Superadmin Only */}
+              {admin.role === "superadmin" && (
+                <TabButton
+                  active={activeTab === "mail"}
+                  onClick={() => setActiveTab("mail")}
+                  icon={<Mail className="w-4 h-4" />}
+                  label="Mail Center"
+                />
+              )}
 
-            {/* Ticket Verification - Superadmin Only */}
-            {admin.role === "superadmin" && (
-              <TabButton
-                active={activeTab === "verify"}
-                onClick={() => setActiveTab("verify")}
-                icon={<CheckCircle className="w-4 h-4" />}
-                label="Ticket Verification"
-              />
-            )}
+              {/* Payment Verification - Superadmin Only */}
+              {admin.role === "superadmin" && (
+                <TabButton
+                  active={activeTab === "verify-payment"}
+                  onClick={() => setActiveTab("verify-payment")}
+                  icon={<CreditCard className="w-4 h-4" />}
+                  label="Payment Verification"
+                />
+              )}
+
+              {/* Ticket Verification - Superadmin Only */}
+              {admin.role === "superadmin" && (
+                <TabButton
+                  active={activeTab === "verify"}
+                  onClick={() => setActiveTab("verify")}
+                  icon={<CheckCircle className="w-4 h-4" />}
+                  label="Ticket Verification"
+                />
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="w-full px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
-        {activeTab === "verify" && admin.role === "superadmin" && (
-          <UnifiedTicketManagement />
-        )}
-        {activeTab === "registrations" && (
-          <RegistrationsManagement adminId={admin.id} role={admin.role} />
-        )}
-        {/* Events - Superadmin Only */}
-        {activeTab === "events" && admin.role === "superadmin" && (
-          <EventManagement onUpdate={() => {}} />
-        )}
-        {/* Notifications - Superadmin Only */}
-        {activeTab === "notifications" && admin.role === "superadmin" && (
-          <NotificationManagement />
-        )}
-        {/* Admin Management - Superadmin Only */}
-        {activeTab === "admins" && admin.role === "superadmin" && (
-          <AdminManagement
-            admins={admins}
-            currentAdminId={admin.id}
-            onUpdate={fetchAdmins}
-          />
-        )}
-        {activeTab === "mail" && admin.role === "superadmin" && <MailCenter />}
+        {/* Content */}
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+          {activeTab === "verify-payment" && admin.role === "superadmin" && (
+            <PaymentVerificationPanel />
+          )}
+          {activeTab === "verify" && admin.role === "superadmin" && (
+            <UnifiedTicketManagement />
+          )}
+          {activeTab === "registrations" && (
+            <RegistrationsManagement adminId={admin.id} role={admin.role} />
+          )}
+          {activeTab === "events" && admin.role === "superadmin" && (
+            <EventManagement onUpdate={() => { }} />
+          )}
+          {activeTab === "notifications" && admin.role === "superadmin" && (
+            <NotificationManagement />
+          )}
+          {activeTab === "admins" && admin.role === "superadmin" && (
+            <AdminManagement
+              admins={admins}
+              currentAdminId={admin.id}
+              onUpdate={fetchAdmins}
+            />
+          )}
+          {activeTab === "mail" && admin.role === "superadmin" && <MailCenter />}
+        </div>
       </div>
-    </div>
+    </DashboardProvider>
   );
 }
 
@@ -326,11 +344,10 @@ function TabButton({
       onClick={onClick}
       className={`
                 flex items-center gap-2 px-4 py-3 font-medium text-sm transition-all relative whitespace-nowrap font-mono
-                ${
-                  active
-                    ? "text-white bg-white/10"
-                    : "text-white/50 hover:text-white hover:bg-white/5"
-                }
+                ${active
+          ? "text-white bg-white/10"
+          : "text-white/50 hover:text-white hover:bg-white/5"
+        }
             `}
     >
       {icon}

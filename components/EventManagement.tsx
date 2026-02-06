@@ -48,7 +48,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
     try {
       const response = await fetch("/api/admin/events");
       const data = await response.json();
-      setEvents(data.data || []);
+      setEvents(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       console.error("Error fetching events:", error);
     }
@@ -421,13 +421,12 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                     </td>
                     <td className="hidden sm:table-cell px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-white/70 font-mono whitespace-nowrap">
                       <span
-                        className={`font-medium ${
-                          event.registeredCount >= event.capacity
-                            ? "text-red-400"
-                            : event.registeredCount >= event.capacity * 0.8
-                              ? "text-yellow-400"
-                              : "text-green-400"
-                        }`}
+                        className={`font-medium ${event.registeredCount >= event.capacity
+                          ? "text-red-400"
+                          : event.registeredCount >= event.capacity * 0.8
+                            ? "text-yellow-400"
+                            : "text-green-400"
+                          }`}
                       >
                         {event.registeredCount}
                       </span>

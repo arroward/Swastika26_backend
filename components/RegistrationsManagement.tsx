@@ -2,28 +2,9 @@
 
 import { useState, useEffect } from "react";
 import RegistrationsTable from "./RegistrationsTable";
-import { StatsSkeleton, TableSkeleton } from "./SkeletonLoaders";
-
-interface Event {
-    id: string;
-    title: string;
-}
-
-interface Registration {
-    id: string;
-    fullName: string;
-    email: string;
-    phone: string;
-    collegeName?: string;
-    universityName?: string;
-    teamSize?: number;
-    upiTransactionId?: string;
-    accountHolderName?: string;
-    uploadFileUrl?: string;
-    registrationDate: string;
-    eventId: string;
-    eventTitle?: string;
-}
+import { useDashboard } from "./DashboardContext";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface RegistrationsManagementProps {
     adminId: string;
@@ -31,105 +12,185 @@ interface RegistrationsManagementProps {
 }
 
 export default function RegistrationsManagement({ adminId, role }: RegistrationsManagementProps) {
-    const [events, setEvents] = useState<Event[]>([]);
+    const {
+        events,
+        registrations,
+        isRegistrationsLoading: isLoading,
+        registrationsError: error,
+        fetchEvents,
+        fetchRegistrations
+    } = useDashboard();
+
     const [selectedEventId, setSelectedEventId] = useState<string>("all");
-    const [registrations, setRegistrations] = useState<Registration[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState("");
 
     useEffect(() => {
-        fetchEvents();
+        fetchEvents(role);
     }, []);
 
     useEffect(() => {
-        fetchRegistrations();
+        fetchRegistrations(role, selectedEventId);
     }, [selectedEventId]);
 
-    const fetchEvents = async () => {
-        try {
-            // Get admin from localStorage to pass role
-            const adminData = localStorage.getItem('admin');
-            const admin = adminData ? JSON.parse(adminData) : null;
-
-            // Use the admin events API with role parameter
-            const url = admin ? `/api/admin/events?role=${admin.role}` : '/api/admin/events';
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch events');
-            }
-
-            const data = await response.json();
-
-            // API now returns direct array
-            setEvents(Array.isArray(data) ? data : []);
-        } catch (error) {
-            console.error("Error fetching events:", error);
-            setEvents([]);
-            setError("Failed to load events");
-        }
-    };
-
-    const fetchRegistrations = async () => {
-        setIsLoading(true);
-        setError("");
-        try {
-            // Use the admin registrations API with role and optionally eventId
-            let url = `/api/admin/registrations?role=${role}`;
-            if (selectedEventId !== "all") {
-                url += `&eventId=${selectedEventId}`;
-            }
-
-            const response = await fetch(url);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Failed to fetch registrations");
-            }
-
-            setRegistrations(data.success ? data.data : data);
-        } catch (err: any) {
-            console.error("Error fetching registrations:", err);
-            setError(err.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     const handleDownload = async (format: "csv" | "pdf") => {
-        if (format === "pdf") {
-            alert("PDF Export is currently handled by the print function of your browser. Use Ctrl+P on the registrations table.");
+        if (registrations.length === 0) {
+            alert("No registrations to export");
             return;
         }
 
-        // Simple Client-side CSV Export
-        try {
-            if (registrations.length === 0) {
-                alert("No registrations to export");
-                return;
+        // 1. Filter Data based on Role
+        // 1. Filter and Format Data based on Role
+        const filteredData = registrations.map(reg => {
+            // Helper to format team members
+            let teamDetails = "N/A";
+            if (reg.teamMembers) {
+                try {
+                    const parsed = typeof reg.teamMembers === 'string'
+                        ? JSON.parse(reg.teamMembers)
+                        : reg.teamMembers;
+
+                    if (Array.isArray(parsed)) {
+                        teamDetails = parsed.map((m: any, idx: number) => {
+                            // Handle string array
+                            if (typeof m === 'string') return `• ${m}`;
+
+                            // Handle object array with fallbacks
+                            const name = m.name || m.fullName || m.userName || `Member ${idx + 1}`;
+                            const email = m.email || m.emailAddress || '';
+                            // Only show email if it exists
+                            return email ? `• ${name} (${email})` : `• ${name}`;
+                        }).join("\n");
+                    } else if (typeof parsed === 'object') {
+                        // If it's an object (key-value), format nicely
+                        teamDetails = Object.entries(parsed).map(([k, v]) => `• ${k}: ${v}`).join("\n");
+                    } else {
+                        teamDetails = String(parsed);
+                    }
+                } catch (e) {
+                    teamDetails = String(reg.teamMembers);
+                }
             }
 
-            const headers = Object.keys(registrations[0]).join(",");
-            const csvContent = [
-                headers,
-                ...registrations.map(reg =>
-                    Object.values(reg).map(val =>
-                        typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
-                    ).join(",")
-                )
-            ].join("\n");
+            // Base fields visible to everyone
+            const base = {
+                "Name": reg.fullName,
+                "Email": reg.email,
+                "Phone": reg.phone,
+                "College": reg.collegeName || "N/A",
+                "University": reg.universityName || "N/A",
+                "Event": reg.eventTitle || "N/A",
+                "Size": reg.teamSize || 1,
+                "Team Members": teamDetails,
+                "Date": new Date(reg.registrationDate).toLocaleDateString()
+            };
 
-            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = downloadUrl;
-            link.setAttribute("download", `registrations_${selectedEventId}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (err: any) {
-            console.error("Download error:", err);
-            alert("Failed to download: " + err.message);
+            // Sensitive fields removed as requested
+
+            return base;
+        });
+
+        if (format === "csv") {
+            try {
+                const headers = Object.keys(filteredData[0]).join(",");
+                const csvContent = [
+                    headers,
+                    ...filteredData.map(reg =>
+                        Object.values(reg).map(val =>
+                            typeof val === 'string' ? `"${val.replace(/"/g, '""')}"` : val
+                        ).join(",")
+                    )
+                ].join("\n");
+
+                // Add BOM for Excel UTF-8 compatibility
+                const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = downloadUrl;
+
+                // Generate filename from Event Title
+                const filenameDate = new Date().toISOString().split('T')[0];
+                const cleanTitle = selectedEvent
+                    ? selectedEvent.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+                    : 'all_events';
+
+                link.setAttribute("download", `registrations_${cleanTitle}_${filenameDate}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err: any) {
+                console.error("CSV Download error:", err);
+                alert("Failed to download CSV: " + err.message);
+            }
+        } else if (format === "pdf") {
+            try {
+                // Landscape for max width
+                const doc = new jsPDF({ orientation: 'landscape' });
+
+                // Colors
+                const accentColor = [220, 38, 38]; // Red-600
+
+                // Header
+                doc.setFontSize(14);
+                doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+                doc.text("Swastika '26 - Registrations", 14, 15);
+
+                doc.setFontSize(9);
+                doc.setTextColor(100);
+                doc.text(`Generated by: ${role === 'superadmin' ? 'Super Admin' : 'Event Coordinator'}`, 14, 20);
+                doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 24);
+                doc.text(`Total Records: ${filteredData.length}`, 14, 28);
+                if (selectedEventId !== 'all') {
+                    doc.text(`Event ID: ${selectedEventId}`, 14, 32);
+                }
+
+                const columns = Object.keys(filteredData[0]);
+                const rows = filteredData.map(obj => Object.values(obj));
+
+                autoTable(doc, {
+                    head: [columns],
+                    body: rows,
+                    startY: 40,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 8, // Readable size for landscape
+                        cellPadding: 3,
+                        overflow: 'linebreak',
+                        valign: 'middle'
+                    },
+                    headStyles: {
+                        fillColor: [220, 38, 38], // Red
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 25 }, // Name
+                        1: { cellWidth: 40 }, // Email
+                        2: { cellWidth: 22 }, // Phone
+                        3: { cellWidth: 25 }, // College
+                        4: { cellWidth: 25 }, // Uni
+                        5: { cellWidth: 20 }, // Event
+                        6: { cellWidth: 10, halign: 'center' }, // Size
+                        7: { cellWidth: 80 }, // Team Members - Explicit large width
+                        8: { cellWidth: 20 }, // Date
+                    },
+                    alternateRowStyles: {
+                        fillColor: [245, 245, 245]
+                    },
+                    margin: { top: 40, left: 7, right: 7 } // Maximize print area
+                });
+
+                // Generate filename from Event Title if available
+                const filenameDate = new Date().toISOString().split('T')[0];
+                const cleanTitle = selectedEvent
+                    ? selectedEvent.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()
+                    : 'all_events';
+
+                doc.save(`registrations_${cleanTitle}_${filenameDate}.pdf`);
+
+            } catch (err: any) {
+                console.error("PDF Download error:", err);
+                alert("Failed to generate PDF. Make sure you are using a modern browser.");
+            }
         }
     };
 
@@ -148,8 +209,9 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
                 throw new Error(data.error || "Failed to delete");
             }
 
-            // Remove from state
-            setRegistrations(prev => prev.filter(r => r.id !== id));
+            // Optimistic update handled by context or we re-fetch, 
+            // but for simplicity let's just re-fetch to sync
+            fetchRegistrations(role, selectedEventId);
             alert("Registration deleted successfully");
         } catch (err: any) {
             console.error("Delete error:", err);
@@ -162,10 +224,10 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div className="bg-white/5 p-8 rounded-3xl border border-white/10 backdrop-blur-sm">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="bg-white/5 p-4 sm:p-6 lg:p-8 rounded-3xl border border-white/10 backdrop-blur-sm">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                     <div>
-                        <h2 className="text-3xl font-syne font-bold text-white mb-2">
+                        <h2 className="text-2xl sm:text-3xl font-syne font-bold text-white mb-2">
                             Event Registrations
                         </h2>
                         <p className="text-white/50 text-sm">
@@ -174,12 +236,12 @@ export default function RegistrationsManagement({ adminId, role }: Registrations
                     </div>
 
                     {/* Event Filter */}
-                    <div className="flex items-center gap-3">
-                        <label className="text-xs font-mono text-white/50 uppercase tracking-wider">Filter by Event:</label>
+                    <div className="w-full lg:w-auto bg-black/20 p-1.5 rounded-2xl border border-white/5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <label className="text-xs font-mono text-white/50 uppercase tracking-wider px-2 hidden sm:block">Filter:</label>
                         <select
                             value={selectedEventId}
                             onChange={(e) => setSelectedEventId(e.target.value)}
-                            className="bg-black/40 border border-white/10 text-white rounded-xl px-4 py-2 focus:outline-none focus:border-red-500 transition-all"
+                            className="bg-black/40 border border-white/10 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-red-500 transition-all text-sm w-full lg:w-[250px] truncate"
                         >
                             <option value="all">All Events</option>
                             {events.map((event) => (
