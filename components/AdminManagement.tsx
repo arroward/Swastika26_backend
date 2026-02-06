@@ -83,7 +83,9 @@ function AssignedEventsCell({
         </div>
       ))}
       {eventNames.length > 2 && (
-        <div className="text-red-400 font-mono">+{eventNames.length - 2} more</div>
+        <div className="text-red-400 font-mono">
+          +{eventNames.length - 2} more
+        </div>
       )}
     </div>
   );
@@ -273,7 +275,9 @@ export default function AdminManagement({
       <div className="bg-white/5 rounded-3xl border border-white/10 backdrop-blur-sm overflow-hidden">
         <div className="p-8 border-b border-white/10 flex justify-between items-center">
           <div>
-            <h2 className="text-3xl font-syne font-bold text-white mb-2">Admin Management</h2>
+            <h2 className="text-3xl font-syne font-bold text-white mb-2">
+              Admin Management
+            </h2>
             <p className="text-white/50 text-sm">
               Manage admin accounts, roles, and permissions
             </p>
@@ -308,7 +312,9 @@ export default function AdminManagement({
 
         {!admins || admins.length === 0 ? (
           <div className="p-16 text-center text-white/50">
-            <p className="text-xl mb-6 font-mono tracking-tight">No admins found</p>
+            <p className="text-xl mb-6 font-mono tracking-tight">
+              No admins found
+            </p>
             <button
               onClick={handleCreate}
               className="bg-gradient-to-r from-red-600 to-red-800 hover:from-red-500 hover:to-red-700 text-white font-semibold py-3 px-8 rounded-xl transition-all shadow-lg shadow-red-900/20 font-syne uppercase tracking-wider text-sm"
@@ -345,7 +351,10 @@ export default function AdminManagement({
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {admins.map((admin) => (
-                    <tr key={admin.id} className="hover:bg-white/5 transition-colors">
+                    <tr
+                      key={admin.id}
+                      className="hover:bg-white/5 transition-colors"
+                    >
                       <td className="px-6 py-4 text-sm text-white">
                         {admin.name}
                         {admin.id === currentAdminId && (
@@ -359,10 +368,11 @@ export default function AdminManagement({
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-mono border ${admin.role === "superadmin"
-                            ? "bg-purple-500/10 text-purple-300 border-purple-500/20"
-                            : "bg-green-500/10 text-green-300 border-green-500/20"
-                            }`}
+                          className={`px-3 py-1 rounded-full text-xs font-mono border ${
+                            admin.role === "superadmin"
+                              ? "bg-purple-500/10 text-purple-300 border-purple-500/20"
+                              : "bg-green-500/10 text-green-300 border-green-500/20"
+                          }`}
                         >
                           {admin.role === "superadmin"
                             ? "Super Admin"
@@ -405,7 +415,10 @@ export default function AdminManagement({
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4 p-4">
               {admins.map((admin) => (
-                <div key={admin.id} className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <div
+                  key={admin.id}
+                  className="bg-white/5 border border-white/10 rounded-2xl p-5"
+                >
                   <div className="space-y-4">
                     <div className="flex justify-between items-start gap-2">
                       <div>
@@ -422,10 +435,11 @@ export default function AdminManagement({
                         </p>
                       </div>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-mono border whitespace-nowrap ${admin.role === "superadmin"
-                          ? "bg-purple-500/10 text-purple-300 border-purple-500/20"
-                          : "bg-green-500/10 text-green-300 border-green-500/20"
-                          }`}
+                        className={`px-3 py-1 rounded-full text-xs font-mono border whitespace-nowrap ${
+                          admin.role === "superadmin"
+                            ? "bg-purple-500/10 text-purple-300 border-purple-500/20"
+                            : "bg-green-500/10 text-green-300 border-green-500/20"
+                        }`}
                       >
                         {admin.role === "superadmin"
                           ? "Super Admin"
@@ -479,7 +493,10 @@ export default function AdminManagement({
       {/* Create/Edit Modal */}
       {(editingAdmin || isCreating) && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4">
-          <div className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-2xl mx-auto shadow-2xl flex flex-col" style={{ height: 'calc(100vh - 2rem)', maxHeight: '900px' }}>
+          <div
+            className="bg-[#111] border border-white/10 rounded-3xl w-full max-w-2xl mx-auto shadow-2xl flex flex-col"
+            style={{ height: "calc(100vh - 2rem)", maxHeight: "900px" }}
+          >
             {/* Fixed Header */}
             <div className="p-8 border-b border-white/10 flex-shrink-0">
               <h3 className="text-2xl font-syne font-bold text-white">
@@ -489,7 +506,10 @@ export default function AdminManagement({
               </h3>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col flex-1 min-h-0"
+            >
               {/* Scrollable Content */}
               <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
                 <div>
@@ -532,7 +552,9 @@ export default function AdminManagement({
                       setFormData({ ...formData, role: e.target.value })
                     }
                     className="w-full px-4 py-3 bg-black/40 border border-white/10 text-white rounded-xl focus:outline-none focus:border-red-500 transition-all"
-                    disabled={!isCreating && editingAdmin?.id === currentAdminId}
+                    disabled={
+                      !isCreating && editingAdmin?.id === currentAdminId
+                    }
                     required
                   >
                     <option value="superadmin">Super Admin</option>
@@ -612,7 +634,8 @@ export default function AdminManagement({
                                   {event.title}
                                 </div>
                                 <div className="text-white/30 text-[10px] font-mono mt-0.5">
-                                  {new Date(event.date).toLocaleDateString()} • {event.category.toUpperCase()}
+                                  {new Date(event.date).toLocaleDateString()} •{" "}
+                                  {event.category.toUpperCase()}
                                 </div>
                               </div>
                             </label>
@@ -622,7 +645,10 @@ export default function AdminManagement({
                     </div>
                     <p className="text-xs text-white/40 mt-3 font-mono">
                       Select events this coordinator will manage (
-                      <span className="text-red-400">{selectedEventIds.length}</span> selected)
+                      <span className="text-red-400">
+                        {selectedEventIds.length}
+                      </span>{" "}
+                      selected)
                     </p>
                   </div>
                 )}

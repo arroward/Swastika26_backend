@@ -9,8 +9,6 @@ import {
 } from "@/lib/db";
 import { cookies } from "next/headers";
 
-
-
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -94,10 +92,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log("Invalid role configuration");
-    return NextResponse.json(
-      { error: "Access denied" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
   } catch (error) {
     console.error("Error fetching registrations:", error);
     return NextResponse.json(

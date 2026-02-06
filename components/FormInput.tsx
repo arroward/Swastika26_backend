@@ -1,20 +1,20 @@
-"use client";
-
 import { motion } from "framer-motion";
 
 interface FormInputProps {
   label: string;
   name: string;
   type?: string;
-  value: string;
+  value: string | number;
   onChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => void;
   required?: boolean;
   placeholder?: string;
   error?: string;
-  multiline?: boolean;
   helpText?: string;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
 }
 
 export default function FormInput({
@@ -26,90 +26,56 @@ export default function FormInput({
   required = false,
   placeholder,
   error,
-  multiline = false,
   helpText,
+  disabled = false,
+  min,
+  max,
 }: FormInputProps) {
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
-    <motion.div
-      className="mb-6 group"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
+    <motion.div variants={itemVariants} className="mb-6">
       <label
         htmlFor={name}
-        className="block text-white/80 text-sm font-medium mb-2 group-focus-within:text-red-400 transition-colors duration-300"
+        className="block text-white/80 text-sm font-medium mb-3"
       >
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-
-      <div className="relative">
-        {multiline ? (
-          <textarea
-            id={name}
-            name={name}
-            value={value}
-            onChange={onChange}
-            required={required}
-            placeholder={placeholder}
-            rows={4}
-            className={`w-full px-5 py-4 rounded-xl bg-white/5 border backdrop-blur-sm transition-all duration-300
-              text-white placeholder-white/30 outline-none
-              ${
-                error
-                  ? "border-red-500/80 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
-                  : "border-white/10 hover:border-white/20 focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10"
-              }`}
-          />
-        ) : (
-          <input
-            id={name}
-            name={name}
-            type={type}
-            value={value}
-            onChange={onChange}
-            required={required}
-            placeholder={placeholder}
-            className={`w-full px-5 py-4 rounded-xl bg-white/5 border backdrop-blur-sm transition-all duration-300
-              text-white placeholder-white/30 outline-none
-              ${
-                error
-                  ? "border-red-500/80 focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
-                  : "border-white/10 hover:border-white/20 focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10"
-              }`}
-          />
-        )}
-
-        {/* Animated bottom border/glow */}
+      <div className="relative group">
+        <input
+          type={type}
+          id={name}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          placeholder={placeholder}
+          disabled={disabled}
+          min={min}
+          max={max}
+          className={`w-full px-5 py-4 rounded-xl bg-white/5 border backdrop-blur-sm transition-all duration-300 text-white placeholder-white/30 outline-none focus:border-red-500/50 focus:ring-4 focus:ring-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed ${
+            error
+              ? "border-red-500/50 bg-red-500/5"
+              : "border-white/10 focus:bg-white/10"
+          }`}
+        />
         <div className="absolute bottom-0 left-0 h-[1px] w-0 bg-gradient-to-r from-red-500 via-white to-red-500 transition-all duration-500 group-focus-within:w-full opacity-0 group-focus-within:opacity-100"></div>
       </div>
-
-      {helpText && !error && (
-        <p className="mt-2 text-xs text-white/40 italic">{helpText}</p>
-      )}
-
       {error && (
         <motion.p
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          className="mt-2 text-sm text-red-500/90 font-medium flex items-center"
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-2 text-sm text-red-400"
         >
-          <svg
-            className="w-4 h-4 mr-1.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
           {error}
         </motion.p>
+      )}
+      {helpText && !error && (
+        <p className="mt-2 text-xs text-white/50">{helpText}</p>
       )}
     </motion.div>
   );

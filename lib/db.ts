@@ -22,7 +22,11 @@ export async function initDatabase() {
         category VARCHAR(100),
         capacity INTEGER DEFAULT 100,
         registered_count INTEGER DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        registration_fee INTEGER DEFAULT 0,
+        is_online BOOLEAN DEFAULT false,
+        rules JSONB DEFAULT '[]',
+        price_amount INTEGER DEFAULT 0
       )
     `;
 
@@ -87,7 +91,10 @@ export async function getEvents(): Promise<Event[]> {
         capacity,
         registered_count as "registeredCount",
         registration_fee as "registrationFee",
-        is_online as "isOnline"
+        is_online as "isOnline",
+        rules,
+        price_amount as "priceAmount",
+        created_at as "createdAt"
       FROM events
       ORDER BY date ASC
     `;
@@ -112,7 +119,10 @@ export async function getEventById(id: string): Promise<Event | null> {
         capacity,
         registered_count as "registeredCount",
         registration_fee as "registrationFee",
-        is_online as "isOnline"
+        is_online as "isOnline",
+        rules,
+        price_amount as "priceAmount",
+        created_at as "createdAt"
       FROM events
       WHERE id = ${id}
     `;
@@ -365,7 +375,12 @@ export async function getAdminManagedEvents(adminId: string): Promise<Event[]> {
         e.image_url as "imageUrl",
         e.category,
         e.capacity,
-        e.registered_count as "registeredCount"
+        e.registered_count as "registeredCount",
+        e.registration_fee as "registrationFee",
+        e.is_online as "isOnline",
+        e.rules,
+        e.price_amount as "priceAmount",
+        e.created_at as "createdAt"
       FROM events e
       JOIN admin_events ae ON e.id = ae.event_id
       WHERE ae.admin_id = ${adminId}
@@ -555,11 +570,15 @@ export async function createEvent(event: {
   imageUrl: string;
   category: string;
   capacity: number;
+  registrationFee: number;
+  isOnline: boolean;
+  rules: string[];
+  priceAmount: number;
 }) {
   try {
     await sql`
-      INSERT INTO events (id, title, description, date, location, image_url, category, capacity, registered_count)
-      VALUES (${event.id}, ${event.title}, ${event.description}, ${event.date}, ${event.location}, ${event.imageUrl}, ${event.category}, ${event.capacity}, 0)
+      INSERT INTO events (id, title, description, date, location, image_url, category, capacity, registered_count, registration_fee, is_online, rules, price_amount)
+      VALUES (${event.id}, ${event.title}, ${event.description}, ${event.date}, ${event.location}, ${event.imageUrl}, ${event.category}, ${event.capacity}, 0, ${event.registrationFee}, ${event.isOnline}, ${JSON.stringify(event.rules)}, ${event.priceAmount})
     `;
     return true;
   } catch (error) {
@@ -578,6 +597,10 @@ export async function updateEvent(
     imageUrl?: string;
     category?: string;
     capacity?: number;
+    registrationFee?: number;
+    isOnline?: boolean;
+    rules?: string[];
+    priceAmount?: number;
   },
 ) {
   try {
@@ -589,7 +612,11 @@ export async function updateEvent(
           location = ${updates.location || sql`location`},
           image_url = ${updates.imageUrl || sql`image_url`},
           category = ${updates.category || sql`category`},
-          capacity = ${updates.capacity !== undefined ? updates.capacity : sql`capacity`}
+          capacity = ${updates.capacity !== undefined ? updates.capacity : sql`capacity`},
+          registration_fee = ${updates.registrationFee !== undefined ? updates.registrationFee : sql`registration_fee`},
+          is_online = ${updates.isOnline !== undefined ? updates.isOnline : sql`is_online`},
+          rules = ${updates.rules !== undefined ? JSON.stringify(updates.rules) : sql`rules`},
+          price_amount = ${updates.priceAmount !== undefined ? updates.priceAmount : sql`price_amount`}
       WHERE id = ${eventId}
     `;
     return true;

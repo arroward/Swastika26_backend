@@ -190,7 +190,7 @@ export default function AdminSearchPanel() {
 }
 
 function TicketResultCard({ ticket }: { ticket: any }) {
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     ACTIVE: "bg-green-500/20 text-green-500 border-green-500/30",
     USED: "bg-blue-500/20 text-blue-500 border-blue-500/30",
     CANCELLED: "bg-red-500/20 text-red-500 border-red-500/30",
@@ -278,7 +278,7 @@ function TicketResultCard({ ticket }: { ticket: any }) {
 }
 
 function PurchaseResultCard({ purchase }: { purchase: any }) {
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     PENDING: "bg-yellow-500/20 text-yellow-500 border-yellow-500/30",
     COMPLETED: "bg-green-500/20 text-green-500 border-green-500/30",
     FAILED: "bg-red-500/20 text-red-500 border-red-500/30",

@@ -19,21 +19,22 @@ export default function AdminHeader({
   };
 
   return (
-    <header className="bg-gray-800 border-b border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
+    <header className="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
+      <div className="w-full px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <Link
               href="/admin"
-              className="text-2xl font-bold text-blue-400 hover:text-blue-300"
+              className="text-xl sm:text-2xl font-bold text-blue-400 hover:text-blue-300 truncate"
             >
               Admin Panel
             </Link>
-            <div className="hidden sm:block">
-              <p className="text-gray-300 text-sm">
-                Welcome, <span className="font-semibold">{adminName}</span>
+            <div className="text-xs sm:text-sm">
+              <p className="text-gray-300">
+                Welcome,{" "}
+                <span className="font-semibold truncate">{adminName}</span>
               </p>
-              <p className="text-gray-400 text-xs mt-1">
+              <p className="text-gray-400 text-xs mt-0.5">
                 Role:{" "}
                 {adminRole === "superadmin"
                   ? "Super Admin"
@@ -44,7 +45,7 @@ export default function AdminHeader({
 
           <button
             onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded transition duration-200"
+            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded transition duration-200 text-sm sm:text-base"
           >
             Logout
           </button>

@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createEvent, getAdminManagedEvents, getEvents } from "@/lib/db";
+import { deleteEvent, updateEvent } from "@/lib/db";
 import { cookies } from "next/headers";
-import { Event } from "@/types/event";
-import crypto from "crypto";
 
-// Helper to get admin from session
 async function getAdminFromSession(request: NextRequest) {
   try {
     const cookieStore = await cookies();
@@ -14,60 +11,16 @@ async function getAdminFromSession(request: NextRequest) {
       return null;
     }
 
-    const admin = JSON.parse(sessionCookie.value);
-    return admin;
-  } catch (error) {
-    console.error("Error parsing session:", error);
+    return JSON.parse(sessionCookie.value);
+  } catch {
     return null;
   }
 }
 
-export async function GET(request: NextRequest) {
-  try {
-    const admin = await getAdminFromSession(request);
-
-    if (!admin) {
-      console.log("GET /api/admin/events: No admin session found");
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const role = searchParams.get("role");
-
-    console.log(`Fetching events for admin ${admin.email} with role ${role || admin.role}`);
-
-    let events: Event[] = [];
-
-    // Determine effective role
-    const effectiveRole = role || admin.role;
-
-    // Superadmin sees all events
-    if (effectiveRole === "superadmin") {
-      events = await getEvents();
-      console.log(`Superadmin: fetched ${events.length} events`);
-    }
-    // Event coordinator sees only their managed events
-    else if (effectiveRole === "event_coordinator") {
-      events = await getAdminManagedEvents(admin.id);
-      console.log(`Coordinator ${admin.id}: fetched ${events.length} events`);
-    }
-    // Default: return all events
-    else {
-      events = await getEvents();
-      console.log(`Default: fetched ${events.length} events`);
-    }
-
-    return NextResponse.json(events);
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const admin = await getAdminFromSession(request);
 
@@ -78,6 +31,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { id } = await params;
     const body = await request.json();
     const {
       title,
@@ -138,13 +92,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const eventId = crypto.randomUUID();
-
     const normalizedIsOnline =
       isOnline === true || isOnline === "true" || isOnline === 1;
 
-    await createEvent({
-      id: eventId,
+    await updateEvent(id, {
       title,
       description,
       date,
@@ -160,13 +111,42 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Event created successfully",
-      id: eventId,
+      message: "Event updated successfully",
     });
   } catch (error) {
-    console.error("Error creating event:", error);
+    console.error("Error updating event:", error);
     return NextResponse.json(
-      { error: "Failed to create event" },
+      { error: "Failed to update event" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const admin = await getAdminFromSession(request);
+
+    if (!admin || admin.role !== "superadmin") {
+      return NextResponse.json(
+        { error: "Unauthorized. Superadmin access required." },
+        { status: 403 },
+      );
+    }
+
+    const { id } = await params;
+    await deleteEvent(id);
+
+    return NextResponse.json({
+      success: true,
+      message: "Event deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting event:", error);
+    return NextResponse.json(
+      { error: "Failed to delete event" },
       { status: 500 },
     );
   }

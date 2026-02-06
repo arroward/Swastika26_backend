@@ -191,27 +191,29 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* Header */}
       <div className="bg-black/40 border-b border-white/10 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-syne font-bold tracking-tight">
+        <div className="w-full px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-syne font-bold tracking-tight truncate">
                 Swastika '26
               </h1>
-              <p className="text-xs font-mono text-white/50 uppercase tracking-widest mt-1">
+              <p className="text-xs font-mono text-white/50 uppercase tracking-widest mt-0.5 sm:mt-1">
                 Admin Dashboard
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-sm">
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+              <div className="text-xs sm:text-sm">
                 <div className="text-white/50 text-xs font-mono">Welcome,</div>
-                <div className="font-syne font-semibold">{admin.name}</div>
+                <div className="font-syne font-semibold truncate">
+                  {admin.name}
+                </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl text-sm font-medium transition-all shadow-lg shadow-red-900/20"
+                className="flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium transition-all shadow-lg shadow-red-900/20 flex-shrink-0"
               >
                 <LogOut className="w-4 h-4" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -219,9 +221,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-black/20 border-b border-white/10 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex gap-1 overflow-x-auto">
+      <div className="bg-black/20 border-b border-white/10 backdrop-blur-sm overflow-x-auto">
+        <div className="w-full px-3 sm:px-4 lg:px-6">
+          <div className="flex gap-1 overflow-x-auto pb-0 min-w-min">
             <TabButton
               active={activeTab === "registrations"}
               onClick={() => setActiveTab("registrations")}
@@ -255,28 +257,34 @@ export default function AdminDashboard() {
                 label="Admin Management"
               />
             )}
-            {/* Mail Center */}
-            <TabButton
-              active={activeTab === "mail"}
-              onClick={() => setActiveTab("mail")}
-              icon={<Mail className="w-4 h-4" />}
-              label="Mail Center"
-            />
+            {/* Mail Center - Superadmin Only */}
+            {admin.role === "superadmin" && (
+              <TabButton
+                active={activeTab === "mail"}
+                onClick={() => setActiveTab("mail")}
+                icon={<Mail className="w-4 h-4" />}
+                label="Mail Center"
+              />
+            )}
 
-            {/* Ticket Verification - Last Tab */}
-            <TabButton
-              active={activeTab === "verify"}
-              onClick={() => setActiveTab("verify")}
-              icon={<CheckCircle className="w-4 h-4" />}
-              label="Ticket Verification"
-            />
+            {/* Ticket Verification - Superadmin Only */}
+            {admin.role === "superadmin" && (
+              <TabButton
+                active={activeTab === "verify"}
+                onClick={() => setActiveTab("verify")}
+                icon={<CheckCircle className="w-4 h-4" />}
+                label="Ticket Verification"
+              />
+            )}
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {activeTab === "verify" && <UnifiedTicketManagement />}
+      <div className="w-full px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
+        {activeTab === "verify" && admin.role === "superadmin" && (
+          <UnifiedTicketManagement />
+        )}
         {activeTab === "registrations" && (
           <RegistrationsManagement adminId={admin.id} role={admin.role} />
         )}
@@ -296,7 +304,7 @@ export default function AdminDashboard() {
             onUpdate={fetchAdmins}
           />
         )}
-        {activeTab === "mail" && <MailCenter />}
+        {activeTab === "mail" && admin.role === "superadmin" && <MailCenter />}
       </div>
     </div>
   );
