@@ -34,7 +34,9 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
 
-    console.log(`Fetching events for admin ${admin.email} with role ${role || admin.role}`);
+    console.log(
+      `Fetching events for admin ${admin.email} with role ${role || admin.role}`,
+    );
 
     let events: Event[] = [];
 
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest) {
     const effectiveRole = role || admin.role;
 
     // Superadmin sees all events
-    if (effectiveRole === "superadmin") {
+    if (effectiveRole === "superadmin" || effectiveRole === "finance_admin") {
       events = await getEvents();
       console.log(`Superadmin: fetched ${events.length} events`);
     }

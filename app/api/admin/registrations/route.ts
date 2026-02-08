@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     console.log("Request params:", { eventId, role: adminRole });
 
     // Superadmin gets all registrations, or filtered by event
-    if (adminRole === "superadmin") {
+    if (adminRole === "superadmin" || adminRole === "finance_admin") {
       let registrations;
       if (eventId) {
         console.log("Superadmin fetching registrations for event:", eventId);

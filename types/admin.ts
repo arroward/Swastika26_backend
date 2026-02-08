@@ -2,7 +2,7 @@ export interface Admin {
   id: number;
   username: string;
   password: string; // hashed
-  role: "superadmin" | "coordinator";
+  role: "superadmin" | "coordinator" | "finance_admin";
   eventId?: string | null; // null for superadmin, specific event ID for coordinator
   fullName: string;
   email: string;
@@ -12,7 +12,7 @@ export interface Admin {
 export interface AdminSession {
   id: number;
   username: string;
-  role: "superadmin" | "coordinator";
+  role: "superadmin" | "coordinator" | "finance_admin";
   eventId?: string | null;
   fullName: string;
 }

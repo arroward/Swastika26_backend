@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 interface Admin {
   id: string;
   email: string;
-  role: "superadmin" | "event_coordinator";
+  role: "superadmin" | "event_coordinator" | "finance_admin";
   name: string;
 }
 

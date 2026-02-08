@@ -54,11 +54,13 @@ export async function initDatabase() {
         id VARCHAR(255) PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        role VARCHAR(50) NOT NULL CHECK (role IN ('superadmin', 'event_coordinator')),
+        role VARCHAR(50) NOT NULL CHECK (role IN ('superadmin', 'event_coordinator', 'finance_admin')),
         name VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
+
+    await ensureAdminRoleConstraint();
 
     // Create admin_events junction table for event coordinators
     await sql`
@@ -72,6 +74,23 @@ export async function initDatabase() {
     console.log("Database tables initialized successfully");
   } catch (error) {
     console.error("Database initialization error:", error);
+    throw error;
+  }
+}
+
+async function ensureAdminRoleConstraint() {
+  try {
+    await sql`
+      ALTER TABLE admins
+      DROP CONSTRAINT IF EXISTS admins_role_check
+    `;
+
+    await sql`
+      ALTER TABLE admins
+      ADD CONSTRAINT admins_role_check CHECK (role IN ('superadmin', 'event_coordinator', 'finance_admin'))
+    `;
+  } catch (error) {
+    console.error("Error ensuring admin role constraint:", error);
     throw error;
   }
 }
@@ -214,7 +233,7 @@ export async function getAdminByEmail(email: string) {
 // Get events for admin (coordinator sees only their events)
 export async function getAdminEvents(adminId: string, role: string) {
   try {
-    if (role === "superadmin") {
+    if (role === "superadmin" || role === "finance_admin") {
       return await getEvents();
     } else {
       // Event coordinator - get only their events
@@ -401,6 +420,7 @@ export async function createAdmin(admin: {
   name: string;
 }) {
   try {
+    await ensureAdminRoleConstraint();
     await sql`
       INSERT INTO admins (id, email, password, role, name)
       VALUES (${admin.id}, ${admin.email}, ${admin.password}, ${admin.role}, ${admin.name})
@@ -504,6 +524,7 @@ export async function updateAdmin(
   },
 ) {
   try {
+    await ensureAdminRoleConstraint();
     const setFields = [];
     const values = [];
 

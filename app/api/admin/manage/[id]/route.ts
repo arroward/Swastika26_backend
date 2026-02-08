@@ -3,6 +3,12 @@ import { updateAdmin, deleteAdmin } from "@/lib/db";
 import { cookies } from "next/headers";
 import crypto from "crypto";
 
+const ALLOWED_ROLES = new Set([
+  "superadmin",
+  "event_coordinator",
+  "finance_admin",
+]);
+
 async function getAdminFromSession(request: NextRequest) {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("admin_session");
@@ -48,7 +54,12 @@ export async function PATCH(
     const updates: any = {};
     if (email) updates.email = email;
     if (password) updates.password = hashPassword(password);
-    if (role) updates.role = role;
+    if (role) {
+      if (!ALLOWED_ROLES.has(role)) {
+        return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+      }
+      updates.role = role;
+    }
     if (name) updates.name = name;
 
     await updateAdmin(id, updates);

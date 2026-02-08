@@ -26,6 +26,12 @@ async function getAdminFromSession(request: NextRequest) {
   }
 }
 
+const ALLOWED_ROLES = new Set([
+  "superadmin",
+  "event_coordinator",
+  "finance_admin",
+]);
+
 function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
 }
@@ -102,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role
-    if (role !== "superadmin" && role !== "event_coordinator") {
+    if (!ALLOWED_ROLES.has(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 

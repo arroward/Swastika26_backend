@@ -28,7 +28,7 @@ export interface EventRegistration {
   uploadFileUrl?: string; // For online events
 }
 
-export type AdminRole = "superadmin" | "event_coordinator";
+export type AdminRole = "superadmin" | "event_coordinator" | "finance_admin";
 
 export interface Admin {
   id: string;

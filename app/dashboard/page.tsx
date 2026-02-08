@@ -8,7 +8,7 @@ import AdminManagement from "@/components/AdminManagement";
 import RegistrationsManagement from "@/components/RegistrationsManagement";
 import MailCenter from "@/components/MailCenter";
 import { DashboardProvider } from "@/components/DashboardContext";
-import PaymentVerificationPanel from "@/components/PaymentVerificationPanel";
+import FinanceDashboard from "@/components/FinanceDashboard";
 import {
   Calendar,
   Bell,
@@ -28,13 +28,13 @@ type TabType =
   | "notifications"
   | "admins"
   | "verify"
-  | "verify-payment"
-  | "mail";
+  | "mail"
+  | "finance";
 
 interface Admin {
   id: string;
   email: string;
-  role: "superadmin" | "event_coordinator";
+  role: "superadmin" | "event_coordinator" | "finance_admin";
   name: string;
   createdAt: string;
   eventIds?: string[];
@@ -51,6 +51,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     validateSession();
   }, []);
+
+  useEffect(() => {
+    if (admin?.role === "finance_admin") {
+      setActiveTab("finance");
+    }
+  }, [admin?.role]);
 
   const validateSession = async () => {
     try {
@@ -209,7 +215,9 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
                 <div className="text-right hidden sm:block">
-                  <div className="text-white/50 text-[10px] font-mono">Welcome,</div>
+                  <div className="text-white/50 text-[10px] font-mono">
+                    Welcome,
+                  </div>
                   <div className="font-syne font-semibold text-sm truncate max-w-[150px]">
                     {admin.name}
                   </div>
@@ -231,12 +239,14 @@ export default function AdminDashboard() {
         <div className="bg-black/20 border-b border-white/10 backdrop-blur-sm overflow-x-auto">
           <div className="w-full px-3 sm:px-4 lg:px-6">
             <div className="flex gap-1 overflow-x-auto pb-0 min-w-min">
-              <TabButton
-                active={activeTab === "registrations"}
-                onClick={() => setActiveTab("registrations")}
-                icon={<ClipboardList className="w-4 h-4" />}
-                label="Registrations"
-              />
+              {admin.role !== "finance_admin" && (
+                <TabButton
+                  active={activeTab === "registrations"}
+                  onClick={() => setActiveTab("registrations")}
+                  icon={<ClipboardList className="w-4 h-4" />}
+                  label="Registrations"
+                />
+              )}
               {/* Events - Superadmin Only */}
               {admin.role === "superadmin" && (
                 <TabButton
@@ -274,13 +284,13 @@ export default function AdminDashboard() {
                 />
               )}
 
-              {/* Payment Verification - Superadmin Only */}
-              {admin.role === "superadmin" && (
+              {(admin.role === "superadmin" ||
+                admin.role === "finance_admin") && (
                 <TabButton
-                  active={activeTab === "verify-payment"}
-                  onClick={() => setActiveTab("verify-payment")}
+                  active={activeTab === "finance"}
+                  onClick={() => setActiveTab("finance")}
                   icon={<CreditCard className="w-4 h-4" />}
-                  label="Payment Verification"
+                  label="Finance"
                 />
               )}
 
@@ -299,17 +309,18 @@ export default function AdminDashboard() {
 
         {/* Content */}
         <div className="w-full px-3 sm:px-4 lg:px-6 py-6 sm:py-8">
-          {activeTab === "verify-payment" && admin.role === "superadmin" && (
-            <PaymentVerificationPanel />
-          )}
+          {activeTab === "finance" &&
+            (admin.role === "superadmin" || admin.role === "finance_admin") && (
+              <FinanceDashboard />
+            )}
           {activeTab === "verify" && admin.role === "superadmin" && (
             <UnifiedTicketManagement />
           )}
-          {activeTab === "registrations" && (
+          {activeTab === "registrations" && admin.role !== "finance_admin" && (
             <RegistrationsManagement adminId={admin.id} role={admin.role} />
           )}
           {activeTab === "events" && admin.role === "superadmin" && (
-            <EventManagement onUpdate={() => { }} />
+            <EventManagement onUpdate={() => {}} />
           )}
           {activeTab === "notifications" && admin.role === "superadmin" && (
             <NotificationManagement />
@@ -321,7 +332,9 @@ export default function AdminDashboard() {
               onUpdate={fetchAdmins}
             />
           )}
-          {activeTab === "mail" && admin.role === "superadmin" && <MailCenter />}
+          {activeTab === "mail" && admin.role === "superadmin" && (
+            <MailCenter />
+          )}
         </div>
       </div>
     </DashboardProvider>
@@ -344,10 +357,11 @@ function TabButton({
       onClick={onClick}
       className={`
                 flex items-center gap-2 px-4 py-3 font-medium text-sm transition-all relative whitespace-nowrap font-mono
-                ${active
-          ? "text-white bg-white/10"
-          : "text-white/50 hover:text-white hover:bg-white/5"
-        }
+                ${
+                  active
+                    ? "text-white bg-white/10"
+                    : "text-white/50 hover:text-white hover:bg-white/5"
+                }
             `}
     >
       {icon}
