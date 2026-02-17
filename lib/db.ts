@@ -50,7 +50,7 @@ async function pgSql(strings: TemplateStringsArray, ...values: any[]) {
 
 // Default to PostgreSQL (switch to pgSql for PostgreSQL, neonSql for NeonDB)
 export const sql = pgSql;
-export { neonSql, pgSql, pgPool };
+export { pgSql, pgPool };
 
 // Database initialization
 export async function initDatabase() {
