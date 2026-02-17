@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { SITE_CONFIG } from "@/lib/site-config";
+import { StatsSkeleton, CardSkeleton } from "@/components/SkeletonLoaders";
 
 interface NotificationHistory {
   id: string;
@@ -23,6 +24,7 @@ export default function NotificationManagement() {
   const [status, setStatus] = useState<string | null>(null);
   const [deliveryErrors, setDeliveryErrors] = useState<any[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
 
   // Modal State
   const [selectedNotification, setSelectedNotification] =
@@ -73,6 +75,7 @@ export default function NotificationManagement() {
   });
 
   const fetchStats = async () => {
+    setIsFetching(true);
     try {
       const res = await fetch("/api/notifications/stats");
       const data = await res.json();
@@ -81,6 +84,8 @@ export default function NotificationManagement() {
       }
     } catch (error) {
       console.error("Failed to fetch stats", error);
+    } finally {
+      setIsFetching(false);
     }
   };
 
@@ -268,40 +273,55 @@ export default function NotificationManagement() {
         >
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
-              <h2 className="text-[10px] font-mono text-white/50 uppercase tracking-widest mb-1">
-                Total Subscribers
-              </h2>
-              <div className="flex items-end gap-2">
-                <span className="text-4xl font-syne font-bold text-white">
-                  {stats.subscriberCount}
-                </span>
-                <span className="text-xs font-mono text-green-400 mb-2">
-                  devices
-                </span>
-              </div>
-            </div>
+            {isFetching ? (
+              <>
+                <div className="bg-white/5 p-6 rounded-3xl border border-white/10 animate-pulse">
+                  <div className="h-3 bg-zinc-700 rounded w-24 mb-3"></div>
+                  <div className="h-8 bg-zinc-700 rounded w-16"></div>
+                </div>
+                <div className="bg-white/5 p-6 rounded-3xl border border-white/10 animate-pulse">
+                  <div className="h-3 bg-zinc-700 rounded w-24 mb-3"></div>
+                  <div className="h-8 bg-zinc-700 rounded w-16"></div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
+                  <h2 className="text-[10px] font-mono text-white/50 uppercase tracking-widest mb-1">
+                    Total Subscribers
+                  </h2>
+                  <div className="flex items-end gap-2">
+                    <span className="text-4xl font-syne font-bold text-white">
+                      {stats.subscriberCount}
+                    </span>
+                    <span className="text-xs font-mono text-green-400 mb-2">
+                      devices
+                    </span>
+                  </div>
+                </div>
 
-            <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
-              <h2 className="text-[10px] font-mono text-white/50 uppercase tracking-widest mb-1">
-                Last New User
-              </h2>
-              <div className="flex flex-col justify-end h-full pb-1">
-                <span className="text-lg font-syne font-bold text-white">
-                  {stats.lastSubscriberDate
-                    ? new Date(stats.lastSubscriberDate).toLocaleDateString(
-                        undefined,
-                        { month: "short", day: "numeric" },
-                      )
-                    : "N/A"}
-                </span>
-                <span className="text-[10px] font-mono text-white/40">
-                  {stats.lastSubscriberDate
-                    ? new Date(stats.lastSubscriberDate).toLocaleTimeString()
-                    : "-"}
-                </span>
-              </div>
-            </div>
+                <div className="bg-white/5 p-6 rounded-3xl border border-white/10 backdrop-blur-sm">
+                  <h2 className="text-[10px] font-mono text-white/50 uppercase tracking-widest mb-1">
+                    Last New User
+                  </h2>
+                  <div className="flex flex-col justify-end h-full pb-1">
+                    <span className="text-lg font-syne font-bold text-white">
+                      {stats.lastSubscriberDate
+                        ? new Date(stats.lastSubscriberDate).toLocaleDateString(
+                          undefined,
+                          { month: "short", day: "numeric" },
+                        )
+                        : "N/A"}
+                    </span>
+                    <span className="text-[10px] font-mono text-white/40">
+                      {stats.lastSubscriberDate
+                        ? new Date(stats.lastSubscriberDate).toLocaleTimeString()
+                        : "-"}
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* History List */}
@@ -314,7 +334,9 @@ export default function NotificationManagement() {
             </h2>
 
             <div className="space-y-4">
-              {stats.history.length === 0 ? (
+              {isFetching ? (
+                <CardSkeleton count={3} />
+              ) : stats.history.length === 0 ? (
                 <p className="text-white/30 text-sm font-mono italic">
                   No recent broadcasts found.
                 </p>

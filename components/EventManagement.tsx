@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Event } from "@/types/event";
+import { TableSkeleton } from "@/components/SkeletonLoaders";
 
 interface EventManagementProps {
   onUpdate: () => void;
@@ -38,6 +39,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
     priceAmount: "",
   });
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -45,12 +47,16 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
   }, []);
 
   const fetchEvents = async () => {
+    setIsFetching(true);
     try {
       const response = await fetch("/api/admin/events");
       const data = await response.json();
       setEvents(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       console.error("Error fetching events:", error);
+      setError("Failed to fetch events");
+    } finally {
+      setIsFetching(false);
     }
   };
 
@@ -303,7 +309,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
 
   return (
     <>
-      <div className="bg-white/5 rounded-2xl sm:rounded-3xl border border-white/10 backdrop-blur-sm overflow-hidden">
+      <div className="bg-white/5 rounded-2xl sm:rounded-3xl border border-white/10 backdrop-blur-sm overflow-hidden min-h-[400px]">
         <div className="p-4 sm:p-6 lg:p-8 border-b border-white/10 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
           <div className="min-w-0">
             <h2 className="text-2xl sm:text-3xl font-syne font-bold text-white mb-1 sm:mb-2 truncate">
@@ -342,7 +348,11 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
           </div>
         )}
 
-        {events.length === 0 ? (
+        {isFetching ? (
+          <div className="p-4 sm:p-6 lg:p-8">
+            <TableSkeleton rows={5} columns={6} />
+          </div>
+        ) : events.length === 0 ? (
           <div className="p-8 sm:p-12 text-center text-white/50">
             <p className="text-base sm:text-lg mb-4 font-mono">
               No events found
