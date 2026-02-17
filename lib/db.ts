@@ -1,11 +1,56 @@
+import { Pool } from "pg";
 import { neon } from "@neondatabase/serverless";
 import { Event, Admin, AdminRole } from "@/types/event";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set");
+// Disable TLS certificate validation for PostgreSQL in development
+if (process.env.NODE_ENV !== "production") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
-export const sql = neon(process.env.DATABASE_URL);
+// NeonDB Configuration (optional fallback)
+if (!process.env.DATABASE_URL) {
+  console.warn("DATABASE_URL environment variable is not set");
+}
+export const neonSql = process.env.DATABASE_URL
+  ? neon(process.env.DATABASE_URL)
+  : null;
+
+// PostgreSQL Configuration (primary database)
+if (!process.env.POSTGRES_URL) {
+  throw new Error("POSTGRES_URL environment variable is not set");
+}
+
+const pgPool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+});
+
+// Helper function for PostgreSQL tagged template queries
+async function pgSql(strings: TemplateStringsArray, ...values: any[]) {
+  let query = strings[0];
+  const params: any[] = [];
+
+  for (let i = 0; i < values.length; i++) {
+    const value = values[i];
+    // Check if value is a raw SQL fragment
+    if (value && typeof value === "object" && value._raw) {
+      query += value._raw;
+    } else {
+      params.push(value);
+      query += `$${params.length}`;
+    }
+    query += strings[i + 1];
+  }
+
+  const result = await pgPool.query(query, params);
+  return result.rows;
+}
+
+// Helper for raw SQL fragments
+(pgSql as any).raw = (str: string) => ({ _raw: str });
+
+// Default to PostgreSQL (switch to pgSql for PostgreSQL, neonSql for NeonDB)
+export const sql = pgSql;
+export { neonSql, pgSql, pgPool };
 
 // Database initialization
 export async function initDatabase() {
@@ -525,40 +570,32 @@ export async function updateAdmin(
 ) {
   try {
     await ensureAdminRoleConstraint();
-    const setFields = [];
-    const values = [];
+    const fields: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
 
     if (updates.email) {
-      setFields.push(`email = $${setFields.length + 1}`);
+      fields.push(`email = $${paramIndex++}`);
       values.push(updates.email);
     }
     if (updates.password) {
-      setFields.push(`password = $${setFields.length + 1}`);
+      fields.push(`password = $${paramIndex++}`);
       values.push(updates.password);
     }
     if (updates.role) {
-      setFields.push(`role = $${setFields.length + 1}`);
+      fields.push(`role = $${paramIndex++}`);
       values.push(updates.role);
     }
     if (updates.name) {
-      setFields.push(`name = $${setFields.length + 1}`);
+      fields.push(`name = $${paramIndex++}`);
       values.push(updates.name);
     }
 
-    if (setFields.length === 0) {
-      return false;
-    }
+    if (fields.length === 0) return false;
 
     values.push(adminId);
-
-    await sql`
-      UPDATE admins
-      SET email = ${updates.email || sql`email`},
-          password = ${updates.password || sql`password`},
-          role = ${updates.role || sql`role`},
-          name = ${updates.name || sql`name`}
-      WHERE id = ${adminId}
-    `;
+    const query = `UPDATE admins SET ${fields.join(", ")} WHERE id = $${paramIndex}`;
+    await pgPool.query(query, values);
 
     return true;
   } catch (error) {
@@ -625,21 +662,61 @@ export async function updateEvent(
   },
 ) {
   try {
-    await sql`
-      UPDATE events
-      SET title = ${updates.title || sql`title`},
-          description = ${updates.description || sql`description`},
-          date = ${updates.date || sql`date`},
-          location = ${updates.location || sql`location`},
-          image_url = ${updates.imageUrl || sql`image_url`},
-          category = ${updates.category || sql`category`},
-          capacity = ${updates.capacity !== undefined ? updates.capacity : sql`capacity`},
-          registration_fee = ${updates.registrationFee !== undefined ? updates.registrationFee : sql`registration_fee`},
-          is_online = ${updates.isOnline !== undefined ? updates.isOnline : sql`is_online`},
-          rules = ${updates.rules !== undefined ? JSON.stringify(updates.rules) : sql`rules`},
-          price_amount = ${updates.priceAmount !== undefined ? updates.priceAmount : sql`price_amount`}
-      WHERE id = ${eventId}
-    `;
+    const fields: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (updates.title !== undefined) {
+      fields.push(`title = $${paramIndex++}`);
+      values.push(updates.title);
+    }
+    if (updates.description !== undefined) {
+      fields.push(`description = $${paramIndex++}`);
+      values.push(updates.description);
+    }
+    if (updates.date !== undefined) {
+      fields.push(`date = $${paramIndex++}`);
+      values.push(updates.date);
+    }
+    if (updates.location !== undefined) {
+      fields.push(`location = $${paramIndex++}`);
+      values.push(updates.location);
+    }
+    if (updates.imageUrl !== undefined) {
+      fields.push(`image_url = $${paramIndex++}`);
+      values.push(updates.imageUrl);
+    }
+    if (updates.category !== undefined) {
+      fields.push(`category = $${paramIndex++}`);
+      values.push(updates.category);
+    }
+    if (updates.capacity !== undefined) {
+      fields.push(`capacity = $${paramIndex++}`);
+      values.push(updates.capacity);
+    }
+    if (updates.registrationFee !== undefined) {
+      fields.push(`registration_fee = $${paramIndex++}`);
+      values.push(updates.registrationFee);
+    }
+    if (updates.isOnline !== undefined) {
+      fields.push(`is_online = $${paramIndex++}`);
+      values.push(updates.isOnline);
+    }
+    if (updates.rules !== undefined) {
+      fields.push(`rules = $${paramIndex++}`);
+      values.push(JSON.stringify(updates.rules));
+    }
+    if (updates.priceAmount !== undefined) {
+      fields.push(`price_amount = $${paramIndex++}`);
+      values.push(updates.priceAmount);
+    }
+
+    if (fields.length === 0) return false;
+
+    values.push(eventId);
+    const query = `UPDATE events SET ${fields.join(", ")} WHERE id = $${paramIndex}`;
+    await pgPool.query(query, values);
+
     return true;
   } catch (error) {
     console.error("Error updating event:", error);
