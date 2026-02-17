@@ -17,7 +17,7 @@ async function getAdminFromSession(request: NextRequest) {
   }
 }
 
-export async function PATCH(
+async function handleUpdate(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -120,6 +120,20 @@ export async function PATCH(
       { status: 500 },
     );
   }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  return handleUpdate(request, { params });
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  return handleUpdate(request, { params });
 }
 
 export async function DELETE(

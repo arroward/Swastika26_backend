@@ -421,12 +421,13 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                     </td>
                     <td className="hidden sm:table-cell px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm text-white/70 font-mono whitespace-nowrap">
                       <span
-                        className={`font-medium ${event.registeredCount >= event.capacity
-                          ? "text-red-400"
-                          : event.registeredCount >= event.capacity * 0.8
-                            ? "text-yellow-400"
-                            : "text-green-400"
-                          }`}
+                        className={`font-medium ${
+                          event.registeredCount >= event.capacity
+                            ? "text-red-400"
+                            : event.registeredCount >= event.capacity * 0.8
+                              ? "text-yellow-400"
+                              : "text-green-400"
+                        }`}
                       >
                         {event.registeredCount}
                       </span>
@@ -559,6 +560,7 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                       <option value="Sports">Sports</option>
                       <option value="Workshop">Workshop</option>
                       <option value="Competition">Competition</option>
+                      <option value="Main Stage">Main Stage</option>
                       <option value="Other">Other</option>
                     </select>
                     {fieldErrors.category && (
