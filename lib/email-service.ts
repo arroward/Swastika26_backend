@@ -5,6 +5,7 @@ import {
   generateTicketEmailHTML,
   generateReminderEmailHTML,
   generateAnnouncementEmailHTML,
+  generateRegistrationConfirmationEmailHTML,
 } from "./email-templates";
 
 /**
@@ -23,6 +24,15 @@ interface SendAnnouncementParams {
   message: string;
   ctaText?: string;
   ctaUrl?: string;
+}
+
+interface SendRegistrationConfirmationParams {
+  fullName: string;
+  email: string;
+  eventTitle: string;
+  registrationDate: string;
+  upiTransactionId?: string;
+  registrationFee?: number;
 }
 
 /**
@@ -163,5 +173,43 @@ export async function sendAnnouncementEmail({
   await sendAdminNotification(
     "Announcement Email Sent",
     `Announcement "${title}" sent to ${typeof to === "string" ? to : to.length + " recipients"}`,
+  );
+}
+
+/**
+ * Send registration confirmation email after payment verification
+ */
+export async function sendRegistrationConfirmationEmail({
+  fullName,
+  email,
+  eventTitle,
+  registrationDate,
+  upiTransactionId,
+  registrationFee,
+}: SendRegistrationConfirmationParams): Promise<void> {
+  const transporter = createTransporter();
+  const emailHTML = generateRegistrationConfirmationEmailHTML({
+    fullName,
+    email,
+    eventTitle,
+    registrationDate,
+    upiTransactionId,
+    registrationFee,
+  });
+
+  const fromEmail =
+    process.env.SMTP_FROM_EMAIL || `"Swastika '26" <${process.env.SMTP_USER}>`;
+
+  await transporter.sendMail({
+    from: fromEmail,
+    to: email,
+    subject: `✅ Payment Verified - Registration Confirmed for ${eventTitle}`,
+    html: emailHTML,
+  });
+
+  // Send admin notification
+  await sendAdminNotification(
+    "Registration Confirmation Email Sent",
+    `Payment confirmation email sent to ${email} for ${eventTitle}`,
   );
 }

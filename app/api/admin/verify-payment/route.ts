@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminFirestore } from "@/lib/firebase-admin";
 import { cookies } from "next/headers";
+import { sendRegistrationConfirmationEmail } from "@/lib/email-service";
+import { sql } from "@/lib/db";
 
 const FINANCE_ROLES = new Set(["superadmin", "finance_admin"]);
 
@@ -62,6 +64,34 @@ export async function POST(request: NextRequest) {
         },
         { merge: true },
       );
+
+    // Send confirmation email if payment is approved
+    if (status === "APPROVED" && details) {
+      try {
+        // Fetch event details and registration fee
+        const event = await sql`
+          SELECT title, registration_fee
+          FROM events
+          WHERE id = ${eventId}
+          LIMIT 1
+        `;
+
+        if (event && event.length > 0) {
+          await sendRegistrationConfirmationEmail({
+            fullName: details.fullName,
+            email: details.email,
+            eventTitle: event[0].title,
+            registrationDate: details.registrationDate,
+            upiTransactionId: details.upiTransactionId,
+            registrationFee: event[0].registration_fee,
+          });
+          console.log(`✅ Confirmation email sent to ${details.email}`);
+        }
+      } catch (emailError) {
+        console.error("Error sending confirmation email:", emailError);
+        // Don't fail the whole request if email fails
+      }
+    }
 
     return NextResponse.json({
       success: true,
