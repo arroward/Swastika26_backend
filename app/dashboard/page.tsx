@@ -9,6 +9,7 @@ import RegistrationsManagement from "@/components/RegistrationsManagement";
 import MailCenter from "@/components/MailCenter";
 import { DashboardProvider } from "@/components/DashboardContext";
 import FinanceDashboard from "@/components/FinanceDashboard";
+import ProgramSchedule from "@/components/ProgramSchedule";
 import {
   Calendar,
   Bell,
@@ -19,6 +20,7 @@ import {
   Loader2,
   Mail,
   CreditCard,
+  CalendarDays,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -29,7 +31,8 @@ type TabType =
   | "admins"
   | "verify"
   | "mail"
-  | "finance";
+  | "finance"
+  | "schedule";
 
 interface Admin {
   id: string;
@@ -45,6 +48,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("registrations");
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [admins, setAdmins] = useState<Admin[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [sessionError, setSessionError] = useState<string | null>(null);
 
@@ -102,6 +106,7 @@ export default function AdminDashboard() {
       // Fetch admins if superadmin
       if (data.admin.role === "superadmin") {
         await fetchAdmins();
+        await fetchEvents();
       } else {
         setLoading(false);
       }
@@ -158,6 +163,18 @@ export default function AdminDashboard() {
       setAdmins([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEvents = async () => {
+    try {
+      const response = await fetch("/api/admin/events");
+      if (response.ok) {
+        const data = await response.json();
+        setEvents(data);
+      }
+    } catch (error) {
+      console.error("Error fetching events:", error);
     }
   };
 
@@ -294,6 +311,15 @@ export default function AdminDashboard() {
                 />
               )}
 
+              {/* Program Schedule - Superadmin Only */}
+              {admin.role === "superadmin" && (
+                <TabButton
+                  active={activeTab === "schedule"}
+                  onClick={() => setActiveTab("schedule")}
+                  icon={<CalendarDays className="w-4 h-4" />}
+                  label="Program Schedule"
+                />
+              )}
               {/* Ticket Verification - Superadmin Only */}
               {admin.role === "superadmin" && (
                 <TabButton
@@ -334,6 +360,9 @@ export default function AdminDashboard() {
           )}
           {activeTab === "mail" && admin.role === "superadmin" && (
             <MailCenter />
+          )}
+          {activeTab === "schedule" && admin.role === "superadmin" && (
+            <ProgramSchedule />
           )}
         </div>
       </div>

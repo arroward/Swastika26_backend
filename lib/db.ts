@@ -1,6 +1,7 @@
 import { Pool } from "pg";
 import { neon } from "@neondatabase/serverless";
 import { Event, Admin, AdminRole } from "@/types/event";
+import crypto from "crypto";
 
 // NeonDB Configuration (optional fallback)
 if (!process.env.DATABASE_URL) {
@@ -117,6 +118,35 @@ export async function initDatabase() {
         event_id VARCHAR(255) REFERENCES events(id) ON DELETE CASCADE,
         PRIMARY KEY (admin_id, event_id)
       )
+    `;
+
+    // Create program_schedule table
+    await sql`
+      CREATE TABLE IF NOT EXISTS program_schedule (
+        id VARCHAR(255) PRIMARY KEY,
+        event_id VARCHAR(255) REFERENCES events(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        speaker VARCHAR(255),
+        venue VARCHAR(255),
+        start_time TIMESTAMP NOT NULL,
+        end_time TIMESTAMP NOT NULL,
+        day INTEGER NOT NULL DEFAULT 1,
+        "order" INTEGER NOT NULL DEFAULT 0,
+        category VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_program_schedule_event_id 
+      ON program_schedule(event_id)
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_program_schedule_day_order 
+      ON program_schedule(day, "order")
     `;
 
     console.log("Database tables initialized successfully");
