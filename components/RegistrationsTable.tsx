@@ -168,18 +168,19 @@ export default function RegistrationsTable({
               className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-3"
             >
               <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-white font-bold text-lg font-syne">{reg.fullName}</h3>
-                  <p className="text-white/60 text-sm">{reg.email}</p>
+                <div className="flex items-start gap-3">
+                  <span className="text-white/30 font-mono text-xs mt-1">{(registrations.length - index).toString().padStart(2, '0')}</span>
+                  <div>
+                    <h3 className="text-white font-bold text-lg font-syne">{reg.fullName}</h3>
+                    <p className="text-white/60 text-sm">{reg.email}</p>
+                  </div>
                 </div>
-                <span className="text-[10px] text-white/50 font-mono bg-white/5 px-2 py-1 rounded-full border border-white/10">
+                <span className="text-[10px] text-white/50 font-mono bg-white/5 px-2 py-1 rounded-full border border-white/10 shrink-0">
                   {new Date(reg.registrationDate).toLocaleDateString()}
                 </span>
               </div>
 
-              {!eventTitle && (
-                <p className="text-sm text-white/80"><span className="text-white/40 text-xs font-mono uppercase tracking-wider block mb-0.5">Event</span> {reg.eventTitle}</p>
-              )}
+              <p className="text-sm text-white/80"><span className="text-white/40 text-xs font-mono uppercase tracking-wider block mb-0.5">Event</span> {reg.eventTitle}</p>
 
               <div className="flex justify-between items-center pt-3 border-t border-white/10">
                 <button
@@ -207,18 +208,20 @@ export default function RegistrationsTable({
           <table className="w-full text-sm text-left">
             <thead className="bg-black/20 text-xs uppercase font-mono text-white/50 tracking-wider">
               <tr>
+                <th className="px-6 py-4 font-normal w-16">Sl. No</th>
                 <th className="px-6 py-4 font-normal">Name</th>
                 <th className="px-6 py-4 font-normal">Contact</th>
                 <th className="px-6 py-4 font-normal">Date</th>
-                {!eventTitle && (
-                  <th className="px-6 py-4 font-normal">Event</th>
-                )}
+                <th className="px-6 py-4 font-normal">Event</th>
                 <th className="px-6 py-4 font-normal text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {registrations.map((reg, index) => (
                 <tr key={reg.id || index} className="hover:bg-white/5 transition-colors">
+                  <td className="px-6 py-4 text-white/40 font-mono text-xs">
+                    {(registrations.length - index).toString().padStart(2, '0')}
+                  </td>
                   <td className="px-6 py-4">
                     <div className="font-semibold text-white">{reg.fullName}</div>
                   </td>
@@ -231,11 +234,9 @@ export default function RegistrationsTable({
                       {new Date(reg.registrationDate).toLocaleDateString()}
                     </span>
                   </td>
-                  {!eventTitle && (
-                    <td className="px-6 py-4 text-white/80 font-medium">
-                      {reg.eventTitle}
-                    </td>
-                  )}
+                  <td className="px-6 py-4 text-white/80 font-medium">
+                    {reg.eventTitle}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end items-center gap-4">
                       <button

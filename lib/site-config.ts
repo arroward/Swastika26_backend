@@ -8,7 +8,7 @@ export const SITE_CONFIG = {
         tickets: "https://swastika.live/tickets",
         guidelines: "https://swastika.live/guidelines",
         wallet: (purchaseId: string) => `https://swastika.live/wallet/${purchaseId}`,
-        ticket: (ticketId: string) => `https://swastika.live/ticket/${ticketId}`,
+        ticket: (ticketId: string) => `https://swastika.live/ticket/view/${ticketId}`,
     },
     event: {
         dates: "Feb 20-21, 2026",
