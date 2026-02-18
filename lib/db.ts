@@ -75,7 +75,8 @@ export async function initDatabase() {
         registration_fee INTEGER DEFAULT 0,
         is_online BOOLEAN DEFAULT false,
         rules JSONB DEFAULT '[]',
-        price_amount INTEGER DEFAULT 0
+        price_amount INTEGER DEFAULT 0,
+        registration_status VARCHAR(20) DEFAULT 'enabled'
       )
     `;
 
@@ -110,6 +111,7 @@ export async function initDatabase() {
     `;
 
     await ensureAdminRoleConstraint();
+    await ensureEventRegistrationStatusColumn();
 
     // Create admin_events junction table for event coordinators
     await sql`
@@ -173,6 +175,19 @@ async function ensureAdminRoleConstraint() {
   }
 }
 
+// Migration: safely add registration_status column to existing events table
+async function ensureEventRegistrationStatusColumn() {
+  try {
+    await pgPool.query(`
+      ALTER TABLE events
+      ADD COLUMN IF NOT EXISTS registration_status VARCHAR(20) DEFAULT 'enabled'
+    `);
+  } catch (error) {
+    console.error("Error ensuring registration_status column:", error);
+    // Non-fatal — column may already exist
+  }
+}
+
 // Helper functions for events
 export async function getEvents(): Promise<Event[]> {
   try {
@@ -191,7 +206,8 @@ export async function getEvents(): Promise<Event[]> {
         is_online as "isOnline",
         rules,
         price_amount as "priceAmount",
-        created_at as "createdAt"
+        created_at as "createdAt",
+        registration_status as "registrationStatus"
       FROM events
       ORDER BY date ASC
     `;
@@ -219,7 +235,8 @@ export async function getEventById(id: string): Promise<Event | null> {
         is_online as "isOnline",
         rules,
         price_amount as "priceAmount",
-        created_at as "createdAt"
+        created_at as "createdAt",
+        registration_status as "registrationStatus"
       FROM events
       WHERE id = ${id}
     `;
@@ -477,7 +494,8 @@ export async function getAdminManagedEvents(adminId: string): Promise<Event[]> {
         e.is_online as "isOnline",
         e.rules,
         e.price_amount as "priceAmount",
-        e.created_at as "createdAt"
+        e.created_at as "createdAt",
+        e.registration_status as "registrationStatus"
       FROM events e
       JOIN admin_events ae ON e.id = ae.event_id
       WHERE ae.admin_id = ${adminId}
@@ -665,11 +683,12 @@ export async function createEvent(event: {
   isOnline: boolean;
   rules: string[];
   priceAmount: number;
+  registrationStatus?: "enabled" | "disabled";
 }) {
   try {
     await sql`
-      INSERT INTO events (id, title, description, date, location, image_url, category, capacity, registered_count, registration_fee, is_online, rules, price_amount)
-      VALUES (${event.id}, ${event.title}, ${event.description}, ${event.date}, ${event.location}, ${event.imageUrl}, ${event.category}, ${event.capacity}, 0, ${event.registrationFee}, ${event.isOnline}, ${JSON.stringify(event.rules)}, ${event.priceAmount})
+      INSERT INTO events (id, title, description, date, location, image_url, category, capacity, registered_count, registration_fee, is_online, rules, price_amount, registration_status)
+      VALUES (${event.id}, ${event.title}, ${event.description}, ${event.date}, ${event.location}, ${event.imageUrl}, ${event.category}, ${event.capacity}, 0, ${event.registrationFee}, ${event.isOnline}, ${JSON.stringify(event.rules)}, ${event.priceAmount}, ${event.registrationStatus ?? "enabled"})
     `;
     return true;
   } catch (error) {
@@ -692,6 +711,7 @@ export async function updateEvent(
     isOnline?: boolean;
     rules?: string[];
     priceAmount?: number;
+    registrationStatus?: "enabled" | "disabled";
   },
 ) {
   try {
@@ -743,6 +763,10 @@ export async function updateEvent(
       fields.push(`price_amount = $${paramIndex++}`);
       values.push(updates.priceAmount);
     }
+    if (updates.registrationStatus !== undefined) {
+      fields.push(`registration_status = $${paramIndex++}`);
+      values.push(updates.registrationStatus);
+    }
 
     if (fields.length === 0) return false;
 
@@ -753,6 +777,23 @@ export async function updateEvent(
     return true;
   } catch (error) {
     console.error("Error updating event:", error);
+    throw error;
+  }
+}
+
+// Toggle registration open/closed — superadmin only
+export async function updateEventRegistrationStatus(
+  eventId: string,
+  status: "enabled" | "disabled",
+) {
+  try {
+    await pgPool.query(
+      `UPDATE events SET registration_status = $1 WHERE id = $2`,
+      [status, eventId],
+    );
+    return true;
+  } catch (error) {
+    console.error("Error updating event registration status:", error);
     throw error;
   }
 }

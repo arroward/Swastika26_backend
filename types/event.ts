@@ -13,6 +13,7 @@ export interface Event {
   rules?: string[];
   priceAmount?: number;
   createdAt?: string;
+  registrationStatus?: "enabled" | "disabled"; // Controls whether registration is open
 }
 
 export interface EventRegistration {

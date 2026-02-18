@@ -307,6 +307,40 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
     }
   };
 
+  const handleToggleStatus = async (event: Event) => {
+    const newStatus =
+      event.registrationStatus === "disabled" ? "enabled" : "disabled";
+    const action = newStatus === "enabled" ? "enable" : "disable";
+    if (
+      !confirm(
+        `Are you sure you want to ${action} registration for "${event.title}"?`,
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/admin/events/${event.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registrationStatus: newStatus }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update status");
+      }
+
+      await fetchEvents();
+      onUpdate();
+    } catch (err: any) {
+      alert(`Error: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="bg-white/5 rounded-2xl sm:rounded-3xl border border-white/10 backdrop-blur-sm overflow-hidden min-h-[400px]">
@@ -384,6 +418,9 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                   <th className="hidden sm:table-cell px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
                     Capacity
                   </th>
+                  <th className="hidden sm:table-cell px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
+                    Registration
+                  </th>
                   <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs font-mono text-white/50 uppercase tracking-wider">
                     Actions
                   </th>
@@ -443,6 +480,26 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                       </span>
                       <span className="text-white/30"> / {event.capacity}</span>
                     </td>
+                    <td className="hidden sm:table-cell px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono border ${
+                          event.registrationStatus === "disabled"
+                            ? "bg-red-500/15 text-red-300 border-red-500/30"
+                            : "bg-green-500/15 text-green-300 border-green-500/30"
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            event.registrationStatus === "disabled"
+                              ? "bg-red-400"
+                              : "bg-green-400"
+                          }`}
+                        />
+                        {event.registrationStatus === "disabled"
+                          ? "Closed"
+                          : "Open"}
+                      </span>
+                    </td>
                     <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">
                       <div className="flex gap-2 flex-wrap">
                         <button
@@ -451,6 +508,24 @@ export default function EventManagement({ onUpdate }: EventManagementProps) {
                           disabled={loading}
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(event)}
+                          className={`font-mono transition-colors text-xs sm:text-sm ${
+                            event.registrationStatus === "disabled"
+                              ? "text-green-400 hover:text-green-300"
+                              : "text-yellow-400 hover:text-yellow-300"
+                          }`}
+                          disabled={loading}
+                          title={
+                            event.registrationStatus === "disabled"
+                              ? "Enable registration"
+                              : "Disable registration"
+                          }
+                        >
+                          {event.registrationStatus === "disabled"
+                            ? "Enable"
+                            : "Disable"}
                         </button>
                         <button
                           onClick={() => handleDelete(event.id, event.title)}
