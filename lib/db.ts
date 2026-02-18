@@ -17,9 +17,9 @@ if (!process.env.POSTGRES_URL) {
 
 const pgPool = new Pool({
   connectionString: process.env.POSTGRES_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: process.env.POSTGRES_URL.includes('sslmode=require') 
+    ? { rejectUnauthorized: false }
+    : false,
 });
 
 // Helper function for PostgreSQL tagged template queries
