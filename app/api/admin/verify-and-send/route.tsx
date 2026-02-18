@@ -87,7 +87,6 @@ export async function POST(req: NextRequest) {
             `<p style="margin: 2px 0 0; font-size: 14px; font-weight: 700; color: #ccc;">0${countDisplay}</p>`;
 
 
-        // User-Requested "Cyberpunk Vertical" Template
         const emailTemplate = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -96,7 +95,7 @@ export async function POST(req: NextRequest) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SWASTIKA.26 Pass</title>
     <style type="text/css">
-        @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;600;700;800&display=swap');
     </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #050505; font-family: 'Inter', Helvetica, Arial, sans-serif;">
@@ -104,99 +103,76 @@ export async function POST(req: NextRequest) {
         <tr>
             <td align="center">
                 
-                <!-- Main Ticket Container (Vertical) -->
+                <!-- Main Ticket Container -->
                 <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 380px; background-color: #0a0a0a; border: 1px solid #333333; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.9);">
                     
-                    <!-- Top Image / Brand Section -->
+                    <!-- Header -->
                     <tr>
-                        <td align="center" style="background: linear-gradient(180deg, #111111 0%, #0a0a0a 100%); padding: 40px 20px; border-bottom: 2px solid #222;">
-                            <h1 style="margin: 0; font-family: 'Pirata One', serif; font-size: 42px; color: #ffffff; letter-spacing: 2px; line-height: 1;">
+                        <td align="center" style="background: linear-gradient(180deg, #111111 0%, #0a0a0a 100%); padding: 30px 20px; border-bottom: 1px solid #222;">
+                            <h1 style="margin: 0; font-family: 'Pirata One', serif; font-size: 36px; color: #ffffff; letter-spacing: 2px; line-height: 1;">
                                 SWASTIKA<span style="color: #ef4444;">.</span>26
                             </h1>
-                            <p style="margin: 8px 0 0; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #666666;">Click below to view your unique passes. Every pass has its own secure code.</p>
+                            <p style="margin: 8px 0 0; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; color: #666666;">Official Entry Pass</p>
+                        </td>
+                    </tr>
+
+                    <!-- Pass Type -->
+                    <tr>
+                        <td align="center" style="padding: 20px 0 0 0;">
                             
-                            <div style="margin-top: 20px;">
-                                <span style="display: inline-block; padding: 8px 16px; border: 1px solid {{TYPE_COLOR}}; background-color: rgba(239, 68, 68, 0.05); color: {{TYPE_COLOR}}; font-size: 12px; font-weight: bold; text-transform: uppercase; border-radius: 4px; letter-spacing: 1px;">
-                                    {{TYPE_TITLE_SHORT}}
-                                </span>
-                            </div>
                         </td>
                     </tr>
 
-                    <!-- Dashed Divider -->
+                    <!-- Attendee Details -->
                     <tr>
-                        <td style="background-color: #0a0a0a; position: relative; height: 1px;">
-                           <div style="height: 1px; border-top: 2px dashed #333; width: 86%; margin: 0 auto;"></div>
-                           <!-- Cutout Notches -->
-                           <div style="position: absolute; left: -10px; top: -10px; width: 20px; height: 20px; background-color: #050505; border-radius: 50%;"></div>
-                           <div style="position: absolute; right: -10px; top: -10px; width: 20px; height: 20px; background-color: #050505; border-radius: 50%;"></div>
+                        <td style="padding: 10px 30px 0 30px; text-align: center;">
+                             <p style="margin: 10px 0 0; font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -0.5px;">{{ATTENDEE_NAME}}</p>
+                             <p style="margin: 5px 0 0; font-size: 14px; color: #888;">{{EVENT_DATE}}</p>
                         </td>
                     </tr>
 
-                    <!-- Details Section -->
+                    <!-- Ticket Splits -->
                     <tr>
-                        <td style="padding: 30px;">
-                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                        <td align="center" style="padding: 20px 30px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background: #111; border-radius: 8px; padding: 15px;">
                                 <tr>
-                                    <td align="center" style="padding-bottom: 25px;">
-                                        <p style="margin: 0; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; color: #555;">Attendee</p>
-                                        <p style="margin: 5px 0 0; font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px;">{{ATTENDEE_NAME}}</p>
+                                    <td align="left">
+                                        <p style="margin: 0; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 1px;">Admit</p>
+                                        {{TICKET_DETAILS_HTML}}
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td align="center" style="padding-bottom: 25px;">
-                                        <p style="margin: 0; font-size: 9px; text-transform: uppercase; letter-spacing: 2px; color: #555;">Valid Date</p>
-                                        <p style="margin: 5px 0 0; font-size: 18px; font-weight: 700; color: #eee;">{{EVENT_DATE}}</p>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td align="center">
-                                        <table border="0" cellpadding="0" cellspacing="0" width="80%">
-                                            <tr>
-                                                <td align="center" width="50%" style="border-right: 1px solid #222;">
-                                                    <p style="margin: 0; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #555;">Admit</p>
-                                                    {{TICKET_DETAILS_HTML}}
-                                                </td>
-                                                <td align="center" width="50%">
-                                                    <p style="margin: 0; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #555;">Paid</p>
-                                                    <p style="margin: 2px 0 0; font-size: 14px; font-weight: 700; color: #ccc;">₹{{TOTAL_AMOUNT}}</p>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                    <td align="right">
+                                        <p style="margin: 0; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 1px;">Paid</p>
+                                        <p style="margin: 2px 0 0; font-size: 14px; color: #fff; font-weight: bold;">₹{{TOTAL_AMOUNT}}</p>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
 
-                    <!-- QR Section (Bottom) -->
+                    <!-- QR Code Section -->
                     <tr>
-                        <td align="center" style="background-color: #0e0e0e; padding: 30px; border-top: 1px dashed #333;">
-                            <div style="background-color: #ffffff; padding: 12px; border-radius: 12px; display: inline-block;">
-                                <img src="{{QR_URL}}" alt="QR" width="160" height="160" style="display: block; width: 160px; height: 160px;" />
+                        <td align="center" style="padding: 10px 30px 30px 30px;">
+                            <div style="background-color: #ffffff; padding: 15px; border-radius: 16px; display: inline-block; box-shadow: 0 0 30px rgba(255,255,255,0.1);">
+                                <img src="{{QR_URL}}" alt="QR" width="180" height="180" style="display: block; width: 180px; height: 180px;" />
                             </div>
-                            <p style="margin: 15px 0 0; font-size: 10px; text-transform: uppercase; letter-spacing: 3px; color: #fff; font-weight: bold;">Scan For Entry</p>
-                            <p style="margin: 6px 0 0; font-size: 10px; font-family: monospace; color: #ef4444;">{{TRANSACTION_ID}}</p>
+                            
                         </td>
                     </tr>
+
+                    <!-- Instructions -->
+                   
                     
                     <!-- Footer -->
                      <tr>
-                        <td align="center" style="background-color: #080808; padding: 15px; border-top: 1px solid #1a1a1a;">
-                            <p style="margin: 0; font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: 1px;">MBC College of Engineering, Peermade</p>
+                        <td align="center" style="background-color: #080808; padding: 20px; border-top: 1px solid #1a1a1a;">
+                            <p style="margin: 0; font-size: 9px; color: #333; text-transform: uppercase;">MBC College of Engineering, Peermade</p>
                         </td>
                     </tr>
 
                 </table>
-
-                 <div style="margin-top: 25px; text-align: center;">
-                    <a href="{{TICKET_VIEW_URL}}" style="display: inline-block; padding: 10px 20px; background-color: #ffffff; color: #000000; text-decoration: none; font-weight: bold; border-radius: 6px; font-size: 12px; letter-spacing: 0.5px;">
-                        VIEW DIGITAL PASS
-                    </a>
-                </div>
-
+                
                  <div style="margin-top: 20px; text-align: center;">
-                    <a href="https://swastika.live" style="font-size: 10px; color: #444444; text-decoration: none;">&copy; 2026 Swastika Event Team</a>
+                     <p style="margin: 0; font-size: 9px; color: #444;">&copy; 2026 Swastika Event Team</p>
                 </div>
 
             </td>
@@ -259,6 +235,7 @@ export async function POST(req: NextRequest) {
                 status: 'verified',
                 mailStatus: 'sent',
                 mailSentAt: admin.firestore.FieldValue.serverTimestamp(),
+                emailSendCount: admin.firestore.FieldValue.increment(1)
             });
         } else {
             console.warn('Firestore admin not initialized, skipping DB update');

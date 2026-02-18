@@ -26,5 +26,7 @@ if (!admin.apps.length) {
 
 const adminMessaging = admin.apps.length ? admin.messaging() : null;
 const adminFirestore = admin.apps.length ? admin.firestore() : null;
+const adminAuth = admin.apps.length ? admin.auth() : null;
 
-export { adminMessaging, adminFirestore };
+// Export as adminDb for consistency with route code
+export { adminMessaging, adminFirestore, adminFirestore as adminDb, adminAuth };
