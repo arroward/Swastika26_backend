@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { updateEventRegistrationStatus } from "@/lib/db";
 import { cookies } from "next/headers";
 
-async function getAdminFromSession(request: NextRequest) {
+async function getAdminFromSession() {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get("admin_session");
@@ -23,7 +23,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const admin = await getAdminFromSession(request);
+    const admin = await getAdminFromSession();
 
     if (!admin || admin.role !== "superadmin") {
       return NextResponse.json(

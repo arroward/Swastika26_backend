@@ -9,6 +9,8 @@
     "lint": "eslint",
     "seed": "dotenv -e .env -- tsx scripts/seed.ts",
     "seed:admins": "dotenv -e .env -- tsx scripts/seed-admins.ts",
+    "seed:day1-schedule": "dotenv -e .env -- tsx scripts/seed-day1-schedule.ts",
+    "seed:day2-schedule": "dotenv -e .env -- tsx scripts/seed-day2-schedule.ts",
     "verify-db": "dotenv -e .env -- tsx scripts/verify-database.ts",
     "fix-db": "dotenv -e .env -- tsx scripts/fix-database.ts",
     "test-db": "dotenv -e .env -- tsx scripts/test-relationships.ts"

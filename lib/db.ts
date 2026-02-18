@@ -151,9 +151,117 @@ export async function initDatabase() {
       ON program_schedule(day, "order")
     `;
 
+    // Create schedule_program_items table (used by the Program Schedule UI)
+    await sql`
+      CREATE TABLE IF NOT EXISTS schedule_program_items (
+        id VARCHAR(255) PRIMARY KEY,
+        day INTEGER NOT NULL DEFAULT 1,
+        time_start VARCHAR(20) NOT NULL,
+        time_end VARCHAR(20) NOT NULL,
+        program VARCHAR(500) NOT NULL,
+        participants JSONB DEFAULT '[]',
+        sort_order INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_schedule_program_items_day
+      ON schedule_program_items(day, sort_order)
+    `;
+
     console.log("Database tables initialized successfully");
   } catch (error) {
     console.error("Database initialization error:", error);
+    throw error;
+  }
+}
+
+// ── schedule_program_items helpers ───────────────────────────────────────────
+
+export async function getScheduleItems(day: number) {
+  try {
+    const rows = await sql`
+      SELECT id, day, time_start as "timeStart", time_end as "timeEnd",
+             program, participants, sort_order as "sortOrder", created_at as "createdAt"
+      FROM schedule_program_items
+      WHERE day = ${day}
+      ORDER BY sort_order ASC, created_at ASC
+    `;
+    return rows as {
+      id: string;
+      day: number;
+      timeStart: string;
+      timeEnd: string;
+      program: string;
+      participants: string[];
+      sortOrder: number;
+    }[];
+  } catch (error) {
+    console.error("Error fetching schedule items:", error);
+    return [];
+  }
+}
+
+export async function createScheduleItem(item: {
+  id: string;
+  day: number;
+  timeStart: string;
+  timeEnd: string;
+  program: string;
+  participants: string[];
+  sortOrder: number;
+}) {
+  try {
+    const result = await sql`
+      INSERT INTO schedule_program_items
+        (id, day, time_start, time_end, program, participants, sort_order)
+      VALUES
+        (${item.id}, ${item.day}, ${item.timeStart}, ${item.timeEnd},
+         ${item.program}, ${JSON.stringify(item.participants)}, ${item.sortOrder})
+      RETURNING id, day, time_start as "timeStart", time_end as "timeEnd",
+                program, participants, sort_order as "sortOrder"
+    `;
+    return result[0];
+  } catch (error) {
+    console.error("Error creating schedule item:", error);
+    throw error;
+  }
+}
+
+export async function updateScheduleItem(
+  id: string,
+  item: {
+    timeStart: string;
+    timeEnd: string;
+    program: string;
+    participants: string[];
+  },
+) {
+  try {
+    const result = await sql`
+      UPDATE schedule_program_items
+      SET time_start = ${item.timeStart},
+          time_end   = ${item.timeEnd},
+          program    = ${item.program},
+          participants = ${JSON.stringify(item.participants)}
+      WHERE id = ${id}
+      RETURNING id, day, time_start as "timeStart", time_end as "timeEnd",
+                program, participants, sort_order as "sortOrder"
+    `;
+    return result[0] || null;
+  } catch (error) {
+    console.error("Error updating schedule item:", error);
+    throw error;
+  }
+}
+
+export async function deleteScheduleItem(id: string) {
+  try {
+    await sql`DELETE FROM schedule_program_items WHERE id = ${id}`;
+    return true;
+  } catch (error) {
+    console.error("Error deleting schedule item:", error);
     throw error;
   }
 }
@@ -188,8 +296,13 @@ async function ensureEventRegistrationStatusColumn() {
   }
 }
 
+// Run migration eagerly when this module is first imported.
+// Storing the promise lets functions await it to avoid a race on first request.
+const registrationStatusReady = ensureEventRegistrationStatusColumn();
+
 // Helper functions for events
 export async function getEvents(): Promise<Event[]> {
+  await registrationStatusReady;
   try {
     const events = await sql`
       SELECT 
@@ -219,6 +332,7 @@ export async function getEvents(): Promise<Event[]> {
 }
 
 export async function getEventById(id: string): Promise<Event | null> {
+  await registrationStatusReady;
   try {
     const events = await sql`
       SELECT 
@@ -478,6 +592,7 @@ export async function getRegistrationsByEvent(eventId: string) {
 }
 
 export async function getAdminManagedEvents(adminId: string): Promise<Event[]> {
+  await registrationStatusReady;
   try {
     const events = await sql`
       SELECT 

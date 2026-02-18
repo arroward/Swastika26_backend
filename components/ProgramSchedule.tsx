@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Clock,
   Plus,
@@ -10,6 +10,7 @@ import {
   X,
   CalendarDays,
   Download,
+  Loader2,
 } from "lucide-react";
 
 interface ScheduleItem {
@@ -20,121 +21,8 @@ interface ScheduleItem {
   participants: string[];
 }
 
-const day1Schedule: ScheduleItem[] = [
-  {
-    id: "d1-1",
-    timeStart: "9:30",
-    timeEnd: "9:35",
-    program: "Host Entry",
-    participants: [],
-  },
-  {
-    id: "d1-2",
-    timeStart: "9:35",
-    timeEnd: "9:45",
-    program: "Rangapooja",
-    participants: ["Nirthya Dance team"],
-  },
-  {
-    id: "d1-3",
-    timeStart: "9:46",
-    timeEnd: "9:50",
-    program: "Duet Song",
-    participants: ["Rianna & Annmary"],
-  },
-  {
-    id: "d1-4",
-    timeStart: "9:51",
-    timeEnd: "10:00",
-    program: "Song",
-    participants: ["Neenu Miss (StGH)"],
-  },
-  {
-    id: "d1-5",
-    timeStart: "10:01",
-    timeEnd: "10:15",
-    program: "Stage Arrangements",
-    participants: [],
-  },
-  {
-    id: "d1-6",
-    timeStart: "10:16",
-    timeEnd: "10:19",
-    program: "Prayer Song",
-    participants: ["Final year girls"],
-  },
-  {
-    id: "d1-7",
-    timeStart: "10:20",
-    timeEnd: "10:25",
-    program: "Welcome Speech",
-    participants: [],
-  },
-  {
-    id: "d1-8",
-    timeStart: "10:26",
-    timeEnd: "10:35",
-    program: "Presidential Address",
-    participants: ["Dr. Oommen Mammen (Director)"],
-  },
-  {
-    id: "d1-9",
-    timeStart: "10:36",
-    timeEnd: "10:39",
-    program: "Lighting the Lamp",
-    participants: [
-      "Snehapriya Miss",
-      "Director",
-      "Dean",
-      "Principal",
-      "Vice Principal",
-      "Guest",
-      "Main Sponsor",
-      "Core Committee",
-    ],
-  },
-];
-
-const day2Schedule: ScheduleItem[] = [
-  {
-    id: "d2-1",
-    timeStart: "9:00",
-    timeEnd: "9:10",
-    program: "Host Entry",
-    participants: [],
-  },
-  {
-    id: "d2-2",
-    timeStart: "9:10",
-    timeEnd: "9:30",
-    program: "Cultural Performance",
-    participants: [],
-  },
-  {
-    id: "d2-3",
-    timeStart: "9:30",
-    timeEnd: "10:00",
-    program: "Prize Distribution",
-    participants: [],
-  },
-  {
-    id: "d2-4",
-    timeStart: "10:00",
-    timeEnd: "10:30",
-    program: "Valedictory Address",
-    participants: [],
-  },
-  {
-    id: "d2-5",
-    timeStart: "10:30",
-    timeEnd: "11:00",
-    program: "Closing Ceremony",
-    participants: [],
-  },
-];
-
 const emptyItem = (): ScheduleItem => ({
-  id: Date.now().toString(),
+  id: "",
   timeStart: "",
   timeEnd: "",
   program: "",
@@ -154,9 +42,12 @@ function DaySchedulePanel({
   date: string;
 }) {
   const tableRef = useRef<HTMLDivElement>(null);
-  const initialData = day === "day1" ? day1Schedule : day2Schedule;
+  const dayNumber = day === "day1" ? 1 : 2;
 
-  const [schedule, setSchedule] = useState<ScheduleItem[]>(initialData);
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<ScheduleItem | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -164,6 +55,29 @@ function DaySchedulePanel({
   const [newParticipantInput, setNewParticipantInput] = useState("");
   const [editParticipantInput, setEditParticipantInput] = useState("");
   const [downloading, setDownloading] = useState(false);
+
+  // ── Fetch from DB ─────────────────────────────────────────
+  const fetchSchedule = useCallback(async () => {
+    setLoadingData(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/program-schedule?day=${dayNumber}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      setSchedule(json.data ?? []);
+    } catch (err) {
+      console.error("Failed to load schedule:", err);
+      setError("Failed to load schedule. Please refresh.");
+    } finally {
+      setLoadingData(false);
+    }
+  }, [dayNumber]);
+
+  useEffect(() => {
+    fetchSchedule();
+  }, [fetchSchedule]);
 
   // ── Edit ──────────────────────────────────────────────────
   const startEdit = (item: ScheduleItem) => {
@@ -175,15 +89,48 @@ function DaySchedulePanel({
     setEditingId(null);
     setEditDraft(null);
   };
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!editDraft) return;
-    setSchedule((prev) =>
-      prev.map((s) => (s.id === editDraft.id ? editDraft : s)),
-    );
-    cancelEdit();
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/program-schedule/${editDraft.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          timeStart: editDraft.timeStart,
+          timeEnd: editDraft.timeEnd,
+          program: editDraft.program,
+          participants: editDraft.participants,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      setSchedule((prev) =>
+        prev.map((s) => (s.id === editDraft.id ? json.data : s)),
+      );
+      cancelEdit();
+    } catch (err) {
+      console.error("Failed to save edit:", err);
+      setError("Failed to save changes.");
+    } finally {
+      setSaving(false);
+    }
   };
-  const deleteItem = (id: string) =>
-    setSchedule((prev) => prev.filter((s) => s.id !== id));
+  const deleteItem = async (id: string) => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/program-schedule/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setSchedule((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      console.error("Failed to delete item:", err);
+      setError("Failed to delete item.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ── Add ───────────────────────────────────────────────────
   const addParticipantToNew = () => {
@@ -215,16 +162,35 @@ function DaySchedulePanel({
     );
   };
 
-  const submitNewItem = () => {
+  const submitNewItem = async () => {
     if (!newItem.timeStart || !newItem.timeEnd || !newItem.program.trim())
       return;
-    setSchedule((prev) => [
-      ...prev,
-      { ...newItem, id: `${day}-${Date.now()}` },
-    ]);
-    setNewItem(emptyItem());
-    setNewParticipantInput("");
-    setShowAddForm(false);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/program-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          day: dayNumber,
+          timeStart: newItem.timeStart,
+          timeEnd: newItem.timeEnd,
+          program: newItem.program.trim(),
+          participants: newItem.participants,
+          sortOrder: schedule.length,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const json = await res.json();
+      setSchedule((prev) => [...prev, json.data]);
+      setNewItem(emptyItem());
+      setNewParticipantInput("");
+      setShowAddForm(false);
+    } catch (err) {
+      console.error("Failed to add item:", err);
+      setError("Failed to add program item.");
+    } finally {
+      setSaving(false);
+    }
   };
   const cancelAdd = () => {
     setNewItem(emptyItem());
@@ -345,7 +311,14 @@ function DaySchedulePanel({
             {date}
           </p>
           <p className="text-sm text-gray-400 mt-0.5">
-            {schedule.length} program items
+            {loadingData ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Loading…
+              </span>
+            ) : (
+              `${schedule.length} program items`
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -367,6 +340,27 @@ function DaySchedulePanel({
           </button>
         </div>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-center justify-between gap-3 bg-red-900/20 border border-red-700/50 rounded-xl px-4 py-3 text-sm text-red-400">
+          <span>{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-400 hover:text-red-300"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Saving indicator */}
+      {saving && (
+        <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2 w-fit">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+          Saving…
+        </div>
+      )}
 
       {/* Add Form */}
       {showAddForm && (
@@ -509,173 +503,193 @@ function DaySchedulePanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800/60">
-              {schedule.map((item, index) =>
-                editingId === item.id && editDraft ? (
-                  <tr key={item.id} className="bg-gray-800/40">
-                    <td className="px-4 py-3 text-gray-500 align-top">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="text"
-                          value={editDraft.timeStart}
-                          onChange={(e) =>
-                            setEditDraft((p) =>
-                              p ? { ...p, timeStart: e.target.value } : p,
-                            )
-                          }
-                          className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
-                        />
-                        <span className="text-gray-500 text-xs">–</span>
-                        <input
-                          type="text"
-                          value={editDraft.timeEnd}
-                          onChange={(e) =>
-                            setEditDraft((p) =>
-                              p ? { ...p, timeEnd: e.target.value } : p,
-                            )
-                          }
-                          className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
-                        />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <input
-                        type="text"
-                        value={editDraft.program}
-                        onChange={(e) =>
-                          setEditDraft((p) =>
-                            p ? { ...p, program: e.target.value } : p,
-                          )
-                        }
-                        className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
-                      />
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <div className="space-y-1 mb-2">
-                        {editDraft.participants.map((p, i) => (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between gap-2 bg-gray-700/50 rounded px-2 py-1 text-xs"
-                          >
-                            <span className="flex items-center gap-1.5">
-                              <span className="text-red-400">•</span>
-                              {p}
-                            </span>
+              {loadingData
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="px-4 py-4">
+                        <div className="h-3 w-4 bg-gray-800 rounded" />
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-6 w-24 bg-gray-800 rounded-lg" />
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-3 w-40 bg-gray-800 rounded" />
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-3 w-32 bg-gray-800 rounded" />
+                      </td>
+                      <td className="px-4 py-4" />
+                    </tr>
+                  ))
+                : schedule.map((item, index) =>
+                    editingId === item.id && editDraft ? (
+                      <tr key={item.id} className="bg-gray-800/40">
+                        <td className="px-4 py-3 text-gray-500 align-top">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={editDraft.timeStart}
+                              onChange={(e) =>
+                                setEditDraft((p) =>
+                                  p ? { ...p, timeStart: e.target.value } : p,
+                                )
+                              }
+                              className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
+                            />
+                            <span className="text-gray-500 text-xs">–</span>
+                            <input
+                              type="text"
+                              value={editDraft.timeEnd}
+                              onChange={(e) =>
+                                setEditDraft((p) =>
+                                  p ? { ...p, timeEnd: e.target.value } : p,
+                                )
+                              }
+                              className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <input
+                            type="text"
+                            value={editDraft.program}
+                            onChange={(e) =>
+                              setEditDraft((p) =>
+                                p ? { ...p, program: e.target.value } : p,
+                              )
+                            }
+                            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
+                          />
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <div className="space-y-1 mb-2">
+                            {editDraft.participants.map((p, i) => (
+                              <div
+                                key={i}
+                                className="flex items-center justify-between gap-2 bg-gray-700/50 rounded px-2 py-1 text-xs"
+                              >
+                                <span className="flex items-center gap-1.5">
+                                  <span className="text-red-400">•</span>
+                                  {p}
+                                </span>
+                                <button
+                                  onClick={() => removeParticipantFromEdit(i)}
+                                  className="text-gray-500 hover:text-red-400"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-1">
+                            <input
+                              type="text"
+                              placeholder="Add participant…"
+                              value={editParticipantInput}
+                              onChange={(e) =>
+                                setEditParticipantInput(e.target.value)
+                              }
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && addParticipantToEdit()
+                              }
+                              className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
+                            />
                             <button
-                              onClick={() => removeParticipantFromEdit(i)}
-                              className="text-gray-500 hover:text-red-400"
+                              onClick={addParticipantToEdit}
+                              className="bg-gray-600 hover:bg-gray-500 px-2 rounded transition-colors"
                             >
-                              <X className="w-3 h-3" />
+                              <Plus className="w-3 h-3" />
                             </button>
                           </div>
-                        ))}
-                      </div>
-                      <div className="flex gap-1">
-                        <input
-                          type="text"
-                          placeholder="Add participant…"
-                          value={editParticipantInput}
-                          onChange={(e) =>
-                            setEditParticipantInput(e.target.value)
-                          }
-                          onKeyDown={(e) =>
-                            e.key === "Enter" && addParticipantToEdit()
-                          }
-                          className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
-                        />
-                        <button
-                          onClick={addParticipantToEdit}
-                          className="bg-gray-600 hover:bg-gray-500 px-2 rounded transition-colors"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={saveEdit}
-                          className="p-1.5 rounded-lg bg-green-600/20 text-green-400 hover:bg-green-600/40 transition-colors"
-                          title="Save"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          className="p-1.5 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors"
-                          title="Cancel"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-white/[0.02] transition-colors group"
-                  >
-                    <td className="px-4 py-3 text-gray-500 text-xs align-top">
-                      {index + 1}
-                    </td>
-                    <td className="px-4 py-3 align-top whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-xs font-mono font-medium text-red-300">
-                        <Clock className="w-3 h-3 text-red-500" />
-                        {item.timeStart} – {item.timeEnd}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <span className="font-medium text-white">
-                        {item.program}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      {item.participants.length === 0 ? (
-                        <span className="text-gray-600 text-xs italic">—</span>
-                      ) : item.participants.length === 1 ? (
-                        <span className="text-gray-300 text-sm">
-                          {item.participants[0]}
-                        </span>
-                      ) : (
-                        <ul className="space-y-0.5">
-                          {item.participants.map((p, i) => (
-                            <li
-                              key={i}
-                              className="flex items-start gap-1.5 text-gray-300 text-xs"
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={saveEdit}
+                              className="p-1.5 rounded-lg bg-green-600/20 text-green-400 hover:bg-green-600/40 transition-colors"
+                              title="Save"
                             >
-                              <span className="text-red-400 mt-0.5 flex-shrink-0">
-                                •
-                              </span>
-                              {p}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => startEdit(item)}
-                          className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => deleteItem(item.id)}
-                          className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ),
-              )}
-              {schedule.length === 0 && (
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="p-1.5 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors"
+                              title="Cancel"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr
+                        key={item.id}
+                        className="hover:bg-white/[0.02] transition-colors group"
+                      >
+                        <td className="px-4 py-3 text-gray-500 text-xs align-top">
+                          {index + 1}
+                        </td>
+                        <td className="px-4 py-3 align-top whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-xs font-mono font-medium text-red-300">
+                            <Clock className="w-3 h-3 text-red-500" />
+                            {item.timeStart} – {item.timeEnd}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <span className="font-medium text-white">
+                            {item.program}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          {item.participants.length === 0 ? (
+                            <span className="text-gray-600 text-xs italic">
+                              —
+                            </span>
+                          ) : item.participants.length === 1 ? (
+                            <span className="text-gray-300 text-sm">
+                              {item.participants[0]}
+                            </span>
+                          ) : (
+                            <ul className="space-y-0.5">
+                              {item.participants.map((p, i) => (
+                                <li
+                                  key={i}
+                                  className="flex items-start gap-1.5 text-gray-300 text-xs"
+                                >
+                                  <span className="text-red-400 mt-0.5 flex-shrink-0">
+                                    •
+                                  </span>
+                                  {p}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => startEdit(item)}
+                              className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                              title="Edit"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => deleteItem(item.id)}
+                              className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ),
+                  )}
+              {!loadingData && schedule.length === 0 && (
                 <tr>
                   <td
                     colSpan={5}
@@ -717,8 +731,8 @@ export default function ProgramSchedule() {
   const [activeDay, setActiveDay] = useState<DayKey>("day1");
 
   const days: { key: DayKey; label: string; date: string }[] = [
-    { key: "day1", label: "Day 1", date: "February 19, 2026" },
-    { key: "day2", label: "Day 2", date: "February 20, 2026" },
+    { key: "day1", label: "Day 1", date: "February 20, 2026" },
+    { key: "day2", label: "Day 2", date: "February 21, 2026" },
   ];
 
   return (
