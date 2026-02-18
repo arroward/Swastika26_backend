@@ -213,3 +213,26 @@ export async function sendRegistrationConfirmationEmail({
     `Payment confirmation email sent to ${email} for ${eventTitle}`,
   );
 }
+/**
+ * Generic email sender for custom HTML
+ */
+export async function sendEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<void> {
+  const transporter = createTransporter();
+  const fromEmail =
+    process.env.SMTP_FROM_EMAIL || `"Swastika '26" <${process.env.SMTP_USER}>`;
+
+  await transporter.sendMail({
+    from: fromEmail,
+    to,
+    subject,
+    html,
+  });
+}

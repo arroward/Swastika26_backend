@@ -38,7 +38,11 @@ interface TicketBooking {
         [key: string]: any;
     } | boolean;
     admittedAt?: Timestamp;
+    emailSendCount?: number;
+    paymentAckCount?: number;
 }
+
+
 
 // ============================================================================
 // HELPERS
@@ -231,6 +235,34 @@ function VerificationPanel({ viewMode = 'verification' }: VerificationPanelProps
         }
     };
 
+    const handlePaymentAck = async (booking: TicketBooking) => {
+        if (!confirm(`Send Payment Acknowledgement email to ${booking.name}?`)) return;
+
+        setProcessingId(booking.id);
+        try {
+            const res = await fetch('/api/admin/tickets/notify-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ticketId: booking.id })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to send payment ack');
+            }
+
+            alert(`Payment acknowledgement sent to ${booking.email}`);
+
+        } catch (err: any) {
+            console.error(err);
+            alert('Error: ' + err.message);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     const filteredPasses = passes.filter(p => {
         if (!p.name) return false;
         const matchesSearch =
@@ -376,6 +408,7 @@ function VerificationPanel({ viewMode = 'verification' }: VerificationPanelProps
                                         pass={pass}
                                         onVerify={() => handleVerify(pass)}
                                         onReject={() => handleReject(pass.id)}
+                                        onPaymentAck={() => handlePaymentAck(pass)}
                                         isProcessing={processingId === pass.id}
                                     />
                                 ))}
@@ -397,6 +430,7 @@ function VerificationPanel({ viewMode = 'verification' }: VerificationPanelProps
                                     key={pass.id}
                                     pass={pass}
                                     onResend={() => handleVerify(pass, true)}
+                                    onPaymentAck={() => handlePaymentAck(pass)}
                                     isProcessing={processingId === pass.id}
                                     readonly
                                 />
@@ -418,6 +452,7 @@ function PassCard({
     onVerify,
     onReject,
     onResend,
+    onPaymentAck,
     isProcessing,
     readonly
 }: {
@@ -425,6 +460,7 @@ function PassCard({
     onVerify?: () => void,
     onReject?: () => void,
     onResend?: () => void,
+    onPaymentAck?: () => void,
     isProcessing?: boolean,
     readonly?: boolean
 }) {
@@ -501,6 +537,15 @@ function PassCard({
                                 >
                                     <Check className="w-4 h-4" /> Verify
                                 </button>
+                                {pass.status === 'pending' && (
+                                    <button
+                                        onClick={onPaymentAck}
+                                        className="flex-1 md:flex-none px-4 py-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20"
+                                        title="Send Payment Acknowledgement Mail"
+                                    >
+                                        <Mail className="w-4 h-4" /> Ack
+                                    </button>
+                                )}
                                 <button
                                     onClick={onReject}
                                     className="flex-1 md:flex-none px-4 py-2 rounded bg-red-900/30 hover:bg-red-900/50 text-red-500 border border-red-900/30 text-sm font-medium flex items-center justify-center gap-2"
@@ -518,15 +563,26 @@ function PassCard({
                             </div>
 
                             {pass.status === 'verified' && (
-                                <button
-                                    onClick={onResend}
-                                    disabled={isProcessing}
-                                    className="text-[10px] text-gray-500 hover:text-white flex items-center gap-1 bg-gray-700 px-2 py-1 rounded transition-colors"
-                                    title="Resend Ticket Email"
-                                >
-                                    {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
-                                    Resend Mail
-                                </button>
+                                <div className="flex flex-col items-end gap-1">
+                                    <button
+                                        onClick={onResend}
+                                        disabled={isProcessing}
+                                        className="text-[10px] text-gray-500 hover:text-white flex items-center gap-1 bg-gray-700 px-2 py-1 rounded transition-colors w-full justify-end"
+                                        title={`Resend Ticket Email (Sent: ${pass.emailSendCount || 0})`}
+                                    >
+                                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
+                                        Resend Ticket {pass.emailSendCount ? `(${pass.emailSendCount})` : ''}
+                                    </button>
+                                    <button
+                                        onClick={onPaymentAck}
+                                        disabled={isProcessing}
+                                        className="text-[10px] text-blue-400 hover:text-white flex items-center gap-1 bg-blue-900/20 px-2 py-1 rounded transition-colors border border-blue-500/20 w-full justify-end"
+                                        title={`Resend Payment Ack Email (Sent: ${pass.paymentAckCount || 0})`}
+                                    >
+                                        {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                                        Resend Ack {pass.paymentAckCount ? `(${pass.paymentAckCount})` : ''}
+                                    </button>
+                                </div>
                             )}
 
                             {pass.mailStatus && !pass.admitted && pass.status === 'verified' && (
