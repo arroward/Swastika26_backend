@@ -15,11 +15,13 @@ if (!process.env.POSTGRES_URL) {
   throw new Error("POSTGRES_URL environment variable is not set");
 }
 
+// Remove sslmode from connection string and configure SSL explicitly
+const connectionString = process.env.POSTGRES_URL.replace(/[?&]sslmode=[^&]*/g, '');
+const requiresSSL = process.env.POSTGRES_URL.includes("sslmode=require");
+
 const pgPool = new Pool({
-  connectionString: process.env.POSTGRES_URL,
-  ssl: process.env.POSTGRES_URL.includes('sslmode=require') 
-    ? { rejectUnauthorized: false }
-    : false,
+  connectionString: connectionString,
+  ssl: requiresSSL ? { rejectUnauthorized: false } : false,
 });
 
 // Helper function for PostgreSQL tagged template queries
