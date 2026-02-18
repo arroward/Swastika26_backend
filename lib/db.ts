@@ -16,7 +16,10 @@ if (!process.env.POSTGRES_URL) {
 }
 
 // Remove sslmode from connection string and configure SSL explicitly
-const connectionString = process.env.POSTGRES_URL.replace(/[?&]sslmode=[^&]*/g, '');
+const connectionString = process.env.POSTGRES_URL.replace(
+  /[?&]sslmode=[^&]*/g,
+  "",
+);
 const requiresSSL = process.env.POSTGRES_URL.includes("sslmode=require");
 
 const pgPool = new Pool({
