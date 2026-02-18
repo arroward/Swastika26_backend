@@ -6,6 +6,8 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 export type Event = {
     id: string;
     title: string;
+    isOnline?: boolean;
+    category?: string;
 };
 
 export type Registration = {
@@ -69,6 +71,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             if (!response.ok) throw new Error('Failed to fetch events');
 
             const data = await response.json();
+            // Store full event objects
             setEvents(Array.isArray(data) ? data : []);
             setHasFetchedEvents(true);
         } catch (err: any) {

@@ -167,9 +167,40 @@ export default function WalletPage() {
                     </div>
 
                     {/* Tickets List */}
-                    <div className="md:col-span-2 space-y-4">
-                        <div className="flex items-center justify-between px-2">
-                            <h3 className="text-xs font-bold text-white/30 uppercase tracking-[0.2em]">Your Passes ({tickets.length})</h3>
+                    <div className="md:col-span-2 space-y-6">
+
+                        {/* Master Group Pass */}
+                        {tickets.length > 1 && (
+                            <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-blue-500/30 p-6 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+
+                                <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                                    <div className="text-center sm:text-left">
+                                        <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                                            <ShieldCheck className="w-5 h-5 text-blue-400" />
+                                            <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Master Group Entry</span>
+                                        </div>
+                                        <h3 className="text-2xl font-black text-white italic tracking-tight">ALL-IN-ONE PASS</h3>
+                                        <p className="text-gray-400 text-xs mt-2 max-w-sm">
+                                            Scan this single code to admit multiple people from your group at once.
+                                            Valid for all {tickets.length} tickets in this order.
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-white p-3 rounded-xl shadow-2xl shrink-0">
+                                        {/* We generate the QR using the Purchase ID */}
+                                        <img
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`SW26:${purchase.purchaseId}`)}`}
+                                            alt="Group Entry QR"
+                                            className="w-32 h-32"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between px-2 pt-2">
+                            <h3 className="text-xs font-bold text-white/30 uppercase tracking-[0.2em]">Individual Passes ({tickets.length})</h3>
                         </div>
 
                         <div className="grid gap-3">

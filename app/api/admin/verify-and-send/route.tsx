@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
             .replace('{{TICKET_DETAILS_HTML}}', ticketDescriptionHtml)
             .replace('{{TOTAL_AMOUNT}}', totalAmount.toString())
             .replace('{{QR_URL}}', qrUrl)
-            .replace('{{TICKET_VIEW_URL}}', `${SITE_CONFIG.baseUrl}/wallet/${docId}`)
+            .replace('{{TICKET_VIEW_URL}}', `${SITE_CONFIG.baseUrl}/ticket/view/${docId}`)
             .replace('{{BOOKING_ID}}', docId)
             .replace('{{TRANSACTION_ID}}', transactionId);
 
