@@ -2,11 +2,6 @@ import { Pool } from "pg";
 import { neon } from "@neondatabase/serverless";
 import { Event, Admin, AdminRole } from "@/types/event";
 
-// Disable TLS certificate validation for PostgreSQL in development
-if (process.env.NODE_ENV !== "production") {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-}
-
 // NeonDB Configuration (optional fallback)
 if (!process.env.DATABASE_URL) {
   console.warn("DATABASE_URL environment variable is not set");
@@ -22,6 +17,9 @@ if (!process.env.POSTGRES_URL) {
 
 const pgPool = new Pool({
   connectionString: process.env.POSTGRES_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
 // Helper function for PostgreSQL tagged template queries
