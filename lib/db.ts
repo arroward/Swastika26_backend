@@ -266,6 +266,32 @@ export async function deleteScheduleItem(id: string) {
   }
 }
 
+export async function updateScheduleSortOrder(items: { id: string; sortOrder: number }[]) {
+  try {
+    const client = await pgPool.connect();
+    try {
+      await client.query("BEGIN");
+      for (const item of items) {
+        await client.query(
+          "UPDATE schedule_program_items SET sort_order = $1 WHERE id = $2",
+          [item.sortOrder, item.id]
+        );
+      }
+      await client.query("COMMIT");
+      return true;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("Error updating schedule sort order:", error);
+    throw error;
+  }
+}
+
+
 async function ensureAdminRoleConstraint() {
   try {
     await sql`

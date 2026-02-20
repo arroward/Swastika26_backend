@@ -11,7 +11,10 @@ import {
   CalendarDays,
   Download,
   Loader2,
+  GripVertical,
 } from "lucide-react";
+import { Reorder } from "framer-motion";
+
 
 interface ScheduleItem {
   id: string;
@@ -197,6 +200,32 @@ function DaySchedulePanel({
     setNewParticipantInput("");
     setShowAddForm(false);
   };
+
+  // ── Reorder ───────────────────────────────────────────────
+  const handleReorder = async (newOrder: ScheduleItem[]) => {
+    setSchedule(newOrder);
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/program-schedule", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: newOrder.map((item, index) => ({
+            id: item.id,
+            sortOrder: index,
+          })),
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+    } catch (err) {
+      console.error("Failed to reorder:", err);
+      setError("Failed to save new order.");
+      fetchSchedule();
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   // ── PDF Download ──────────────────────────────────────────
   const downloadPDF = async () => {
@@ -482,6 +511,7 @@ function DaySchedulePanel({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 bg-gray-950">
+                <th className="px-4 py-3 w-8"></th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider w-10">
                   #
                 </th>
@@ -502,197 +532,223 @@ function DaySchedulePanel({
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800/60">
+
+            <Reorder.Group
+              as="tbody"
+              axis="y"
+              values={schedule}
+              onReorder={handleReorder}
+              className="divide-y divide-gray-800/60"
+            >
+
               {loadingData
                 ? Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td className="px-4 py-4">
-                        <div className="h-3 w-4 bg-gray-800 rounded" />
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="h-6 w-24 bg-gray-800 rounded-lg" />
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="h-3 w-40 bg-gray-800 rounded" />
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="h-3 w-32 bg-gray-800 rounded" />
-                      </td>
-                      <td className="px-4 py-4" />
-                    </tr>
-                  ))
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-4 py-4" />
+                    <td className="px-4 py-4">
+                      <div className="h-3 w-4 bg-gray-800 rounded" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-6 w-24 bg-gray-800 rounded-lg" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-3 w-40 bg-gray-800 rounded" />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-3 w-32 bg-gray-800 rounded" />
+                    </td>
+                    <td className="px-4 py-4" />
+                  </tr>
+                ))
+
                 : schedule.map((item, index) =>
-                    editingId === item.id && editDraft ? (
-                      <tr key={item.id} className="bg-gray-800/40">
-                        <td className="px-4 py-3 text-gray-500 align-top">
-                          {index + 1}
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={editDraft.timeStart}
-                              onChange={(e) =>
-                                setEditDraft((p) =>
-                                  p ? { ...p, timeStart: e.target.value } : p,
-                                )
-                              }
-                              className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
-                            />
-                            <span className="text-gray-500 text-xs">–</span>
-                            <input
-                              type="text"
-                              value={editDraft.timeEnd}
-                              onChange={(e) =>
-                                setEditDraft((p) =>
-                                  p ? { ...p, timeEnd: e.target.value } : p,
-                                )
-                              }
-                              className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
-                            />
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 align-top">
+                  editingId === item.id && editDraft ? (
+                    <Reorder.Item
+                      key={item.id}
+                      value={item}
+                      as="tr"
+                      className="bg-gray-800/40"
+                    >
+                      <td className="px-4 py-3 text-gray-400 cursor-grab active:cursor-grabbing">
+                        <GripVertical className="w-4 h-4" />
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 align-top">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex items-center gap-1">
                           <input
                             type="text"
-                            value={editDraft.program}
+                            value={editDraft.timeStart}
                             onChange={(e) =>
                               setEditDraft((p) =>
-                                p ? { ...p, program: e.target.value } : p,
+                                p ? { ...p, timeStart: e.target.value } : p,
                               )
                             }
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
+                            className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
                           />
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <div className="space-y-1 mb-2">
-                            {editDraft.participants.map((p, i) => (
-                              <div
-                                key={i}
-                                className="flex items-center justify-between gap-2 bg-gray-700/50 rounded px-2 py-1 text-xs"
+                          <span className="text-gray-500 text-xs">–</span>
+                          <input
+                            type="text"
+                            value={editDraft.timeEnd}
+                            onChange={(e) =>
+                              setEditDraft((p) =>
+                                p ? { ...p, timeEnd: e.target.value } : p,
+                              )
+                            }
+                            className="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <input
+                          type="text"
+                          value={editDraft.program}
+                          onChange={(e) =>
+                            setEditDraft((p) =>
+                              p ? { ...p, program: e.target.value } : p,
+                            )
+                          }
+                          className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
+                        />
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="space-y-1 mb-2">
+                          {editDraft.participants.map((p, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between gap-2 bg-gray-700/50 rounded px-2 py-1 text-xs"
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <span className="text-red-400">•</span>
+                                {p}
+                              </span>
+                              <button
+                                onClick={() => removeParticipantFromEdit(i)}
+                                className="text-gray-500 hover:text-red-400"
                               >
-                                <span className="flex items-center gap-1.5">
-                                  <span className="text-red-400">•</span>
-                                  {p}
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex gap-1">
+                          <input
+                            type="text"
+                            placeholder="Add participant…"
+                            value={editParticipantInput}
+                            onChange={(e) =>
+                              setEditParticipantInput(e.target.value)
+                            }
+                            onKeyDown={(e) =>
+                              e.key === "Enter" && addParticipantToEdit()
+                            }
+                            className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
+                          />
+                          <button
+                            onClick={addParticipantToEdit}
+                            className="bg-gray-600 hover:bg-gray-500 px-2 rounded transition-colors"
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={saveEdit}
+                            className="p-1.5 rounded-lg bg-green-600/20 text-green-400 hover:bg-green-600/40 transition-colors"
+                            title="Save"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="p-1.5 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </Reorder.Item>
+
+                  ) : (
+                    <Reorder.Item
+                      key={item.id}
+                      value={item}
+                      as="tr"
+                      className="hover:bg-white/[0.02] transition-colors group"
+                    >
+                      <td className="px-4 py-3 text-gray-400 cursor-grab active:cursor-grabbing">
+                        <GripVertical className="w-4 h-4" />
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs align-top">
+                        {index + 1}
+                      </td>
+                      <td className="px-4 py-3 align-top whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1.5 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-xs font-mono font-medium text-red-300">
+                          <Clock className="w-3 h-3 text-red-500" />
+                          {item.timeStart} – {item.timeEnd}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <span className="font-medium text-white">
+                          {item.program}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        {item.participants.length === 0 ? (
+                          <span className="text-gray-600 text-xs italic">
+                            —
+                          </span>
+                        ) : item.participants.length === 1 ? (
+                          <span className="text-gray-300 text-sm">
+                            {item.participants[0]}
+                          </span>
+                        ) : (
+                          <ul className="space-y-0.5">
+                            {item.participants.map((p, i) => (
+                              <li
+                                key={i}
+                                className="flex items-start gap-1.5 text-gray-300 text-xs"
+                              >
+                                <span className="text-red-400 mt-0.5 flex-shrink-0">
+                                  •
                                 </span>
-                                <button
-                                  onClick={() => removeParticipantFromEdit(i)}
-                                  className="text-gray-500 hover:text-red-400"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </div>
+                                {p}
+                              </li>
                             ))}
-                          </div>
-                          <div className="flex gap-1">
-                            <input
-                              type="text"
-                              placeholder="Add participant…"
-                              value={editParticipantInput}
-                              onChange={(e) =>
-                                setEditParticipantInput(e.target.value)
-                              }
-                              onKeyDown={(e) =>
-                                e.key === "Enter" && addParticipantToEdit()
-                              }
-                              className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-red-500"
-                            />
-                            <button
-                              onClick={addParticipantToEdit}
-                              className="bg-gray-600 hover:bg-gray-500 px-2 rounded transition-colors"
-                            >
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={saveEdit}
-                              className="p-1.5 rounded-lg bg-green-600/20 text-green-400 hover:bg-green-600/40 transition-colors"
-                              title="Save"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              className="p-1.5 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors"
-                              title="Cancel"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr
-                        key={item.id}
-                        className="hover:bg-white/[0.02] transition-colors group"
-                      >
-                        <td className="px-4 py-3 text-gray-500 text-xs align-top">
-                          {index + 1}
-                        </td>
-                        <td className="px-4 py-3 align-top whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1.5 bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1 text-xs font-mono font-medium text-red-300">
-                            <Clock className="w-3 h-3 text-red-500" />
-                            {item.timeStart} – {item.timeEnd}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <span className="font-medium text-white">
-                            {item.program}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          {item.participants.length === 0 ? (
-                            <span className="text-gray-600 text-xs italic">
-                              —
-                            </span>
-                          ) : item.participants.length === 1 ? (
-                            <span className="text-gray-300 text-sm">
-                              {item.participants[0]}
-                            </span>
-                          ) : (
-                            <ul className="space-y-0.5">
-                              {item.participants.map((p, i) => (
-                                <li
-                                  key={i}
-                                  className="flex items-start gap-1.5 text-gray-300 text-xs"
-                                >
-                                  <span className="text-red-400 mt-0.5 flex-shrink-0">
-                                    •
-                                  </span>
-                                  {p}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={() => startEdit(item)}
-                              className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => deleteItem(item.id)}
-                              className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ),
-                  )}
+                          </ul>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => startEdit(item)}
+                            className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => deleteItem(item.id)}
+                            className="p-1.5 rounded-lg bg-gray-800 text-gray-400 hover:text-red-400 hover:bg-red-900/20 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </Reorder.Item>
+
+                  )
+
+                )}
               {!loadingData && schedule.length === 0 && (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-12 text-center text-gray-500"
                   >
                     <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -703,8 +759,9 @@ function DaySchedulePanel({
                   </td>
                 </tr>
               )}
-            </tbody>
+            </Reorder.Group>
           </table>
+
         </div>
         {schedule.length > 0 && (
           <div className="border-t border-gray-800 px-4 py-3 flex items-center justify-between">
@@ -723,6 +780,7 @@ function DaySchedulePanel({
         )}
       </div>
     </div>
+
   );
 }
 
@@ -754,11 +812,10 @@ export default function ProgramSchedule() {
           <button
             key={d.key}
             onClick={() => setActiveDay(d.key)}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeDay === d.key
-                ? "bg-red-600 text-white shadow-lg shadow-red-900/30"
-                : "text-white/50 hover:text-white hover:bg-white/5"
-            }`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeDay === d.key
+              ? "bg-red-600 text-white shadow-lg shadow-red-900/30"
+              : "text-white/50 hover:text-white hover:bg-white/5"
+              }`}
           >
             <CalendarDays className="w-4 h-4" />
             {d.label}

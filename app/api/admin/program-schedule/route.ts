@@ -73,3 +73,30 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// PATCH /api/admin/program-schedule
+export async function PATCH(request: NextRequest) {
+  try {
+    const admin = await getAdminFromSession(request);
+    if (!admin) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { items } = await request.json();
+    if (!Array.isArray(items)) {
+      return NextResponse.json({ error: "Items array is required" }, { status: 400 });
+    }
+
+    const { updateScheduleSortOrder } = await import("@/lib/db");
+    await updateScheduleSortOrder(items);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("PATCH /api/admin/program-schedule error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
